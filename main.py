@@ -217,12 +217,15 @@ def greedy_Solution(dt_in=dt_input, dt_out=datatable_output, npz=no_pick_zone):
 
         # 主要作用模块
         while fetch_in_res >= fetch_out[2]:  # 取到原料剩下的长度小于新拿出的管材为止
-            dt_out, fetch_out = MM_fetchOne(dt_out, "min")  # 先取一个零件管，更新数量
-            pro_output.append([fetch_out[0], fetch_out[2]])  # 添加到取出的零件管集中
-            fetch_in_res -= fetch_out[2]  # 每次都把剩下的原料减去拿出的零件管的长度
-            if is_continue(dt_out):  # 如果还有零件管未切割
-                dt_out, fetch_out = MM_fetchOne(dt_out, "min")
-                pro_output.append([fetch_out[0], fetch_out[2]])
+            if is_continue(dt_out):
+                dt_out, fetch_out = MM_fetchOne(dt_out, "min")  # 先取一个零件管，更新数量
+                pro_output.append([fetch_out[0], fetch_out[2]])  # 添加到取出的零件管集中
+                fetch_in_res -= fetch_out[2]  # 每次都把剩下的原料减去拿出的零件管的长度
+                if is_continue(dt_out):  # 如果还有零件管未切割
+                    dt_out, fetch_out = MM_fetchOne(dt_out, "min")
+                    pro_output.append([fetch_out[0], fetch_out[2]])
+            else:
+                break
 
         while fetch_in_res < fetch_out[2]:
             if is_continue(dt_in):  # 如果还有原料管
