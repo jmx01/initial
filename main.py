@@ -217,6 +217,7 @@ def greedy_Solution(dt_in=dt_input, dt_out=datatable_output, npz=no_pick_zone):
 
         # 主要作用模块
         while fetch_in_res >= fetch_out[2]:  # 取到原料剩下的长度小于新拿出的管材为止
+            fetch_in_res -= fetch_out[2]
             if is_continue(dt_out):
                 dt_out, fetch_out = MM_fetchOne(dt_out, "min")  # 先取一个零件管，更新数量
                 pro_output.append([fetch_out[0], fetch_out[2]])  # 添加到取出的零件管集中
