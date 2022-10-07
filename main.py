@@ -21,9 +21,11 @@ datatable_output = pd.read_excel(datatable_output)  # [编号、数量、长度]
 
 # 示例禁接矩阵
 deal_no_pick_zone = [
-    ["7406102-B1-15002", [[300, 0], [100, 1], [300, 0], [300, 1]]],
-    ["7406102-B1-15003", [[250, 1], [100, 0], [150, 1]]],
-    ["7406102-B1-15004", [[250, 1], [400, 0], [100, 1], [100, 0], [150, 1], [300, 0], [300, 1]]]
+    ["7406104-B1-10010-5", [[1104, 1], [1300, 0], [900, 1], [1280, 0], [900, 1], [650, 0]]],
+    ["7406104-B1-10011-2", [[1104, 1], [1300, 0], [900, 1], [1280, 0], [900, 1], [650, 0]]],
+    ["7406104-B1-10012-2", [[1104, 1], [1300, 0], [900, 1], [1280, 0], [900, 1], [650, 0]]],
+    ["7406104-B1-10013-2", [[1104, 1], [1300, 0], [900, 1], [1280, 0], [900, 1], [650, 0]]],
+    ["7406104-B1-10014-2", [[1104, 1], [1300, 0], [900, 1], [1280, 0], [900, 1], [650, 0]]]
 ]
 
 material_length = sum(np.array(datatable_input.iloc[:, 1]) * np.array(datatable_input.iloc[:, 2]))  # 输入材料总长度
@@ -135,6 +137,7 @@ def deal_in_out(fetch_in_res, fetch_out, dt_in, npz=no_pick_zone):
     :return:新的原料管，切下的长度，现在缺少的管材长度
     """
     res = 0
+    done = 1  # 没有切割
     npz = np.array(npz)
 
     name = npz[:, 0]
@@ -153,18 +156,24 @@ def deal_in_out(fetch_in_res, fetch_out, dt_in, npz=no_pick_zone):
                 break
             else:  # 在禁接区
                 res = fetch_in_res - np_out[i - 1, 0]
+                done = 0
                 break
 
-    fetch_in_res = fetch_in_res - fetch_out[2] - res  # 为负数，表示零件管还差多长
+    fetch_out[2] = fetch_out[2] + res - fetch_in_res
 
     if res > pick_up:  # 将新的解加入dt_in中
+        dt_in = pd.DataFrame(dt_in)
+        dt_in.columns = ["编号","数量","长度"]
         if res in dt_in["长度"]:
             a = dt_in[(dt_in.长度 == res)].index.tolist()
             dt_in.loc[a, "数量"] += 1
         else:
             dt_in.loc[dt_in.shape[0]] = [dt_in.shape[0], 1, res]
+        dt_in = np.array(dt_in)
+    else:
+        res = 0
 
-    return dt_in, res, fetch_in_res
+    return dt_in, res, fetch_out, done
 
 
 def cut_location(cutting, res, pro_output):
@@ -208,45 +217,32 @@ def greedy_Solution(dt_in=dt_input, dt_out=datatable_output, npz=no_pick_zone):
     ma_input.append([fetch_in[2], fetch_in[2]])  # 添加到原料管集中
     fetch_in_res += fetch_in[2]
 
-    while is_continue(dt_out):  # 当还有零件管时
-        # 时间限制模块
+    while is_continue(dt_out) or fetch_out[2] != 0:
         time2 = time.time()
         time_break = time2 - time1
         if time_break > over_time:
             return 0  # 单个初始解超时判别
 
-        # 主要作用模块
-        while fetch_in_res >= fetch_out[2]:  # 取到原料剩下的长度小于新拿出的管材为止
+        while fetch_in_res >= fetch_out[2]:
             fetch_in_res -= fetch_out[2]
+            ma_input[-1][1] -= fetch_out[2]
+            fetch_out[2] = 0
             if is_continue(dt_out):
-                dt_out, fetch_out = MM_fetchOne(dt_out, "min")  # 先取一个零件管，更新数量
-                pro_output.append([fetch_out[0], fetch_out[2]])  # 添加到取出的零件管集中
-                fetch_in_res -= fetch_out[2]  # 每次都把剩下的原料减去拿出的零件管的长度
-                if is_continue(dt_out):  # 如果还有零件管未切割
-                    dt_out, fetch_out = MM_fetchOne(dt_out, "min")
-                    pro_output.append([fetch_out[0], fetch_out[2]])
+                dt_out, fetch_out = MM_fetchOne(dt_out, "min")
+                pro_output.append([fetch_out[0], fetch_out[2]])
             else:
                 break
 
         while fetch_in_res < fetch_out[2]:
-            if is_continue(dt_in):  # 如果还有原料管
-                # 保留了相对的差距大小
-                dt_in, res, fetch_in_res = deal_in_out(fetch_in_res, fetch_out, dt_in, npz)
-                fetch_out[2] = 0
-
+            dt_in, fetch_in_res, fetch_out, done = deal_in_out(fetch_in_res, fetch_out, dt_in)
+            if is_continue(dt_in) and (sum(dt_in[:, 1]) >= 1 or done):  # 在最后一个时会循环
                 dt_in, fetch_in = MM_fetchOne(dt_in)
-                ma_input.append([fetch_in[2], 0])
-                ma_input[-2][1] = res
-                fetch_in_res += fetch_in[2]
-                while fetch_in_res < 0:
-                    dt_in, fetch_in = MM_fetchOne(dt_in)
-                    ma_input.append([fetch_in[2], 0])
-                    ma_input[-2][1] = 0
-                    fetch_in_res += fetch_in[2]
+                fetch_in_res = fetch_in[2]
+                ma_input.append([fetch_in[2], fetch_in[2]])
             else:
-                return 1  # "原料管用完，重新生成贪婪解"
+                return 1  # 原料管被用光
 
-    # # 处理已经切割分配好的原料管和零件管，生成符合格式的解，此处可以研究编码
+    # 处理已经切割分配好的原料管和零件管，生成符合格式的解，此处可以研究编码
     # ma_input[-1][1] = fetch_in_res  # 最后剩下的长度裁切下来
     # res = 0
     # GS_new = ma_input.copy()  # [[原料长度，剩余长度]，[切割点]]
@@ -284,7 +280,7 @@ def main():
         count = 0
         while count < greedy_solution_quantity:
             GS_new = greedy_Solution()  # 新生成的贪婪解
-            if GS_new != 0 and GS_new not in initial:
+            if GS_new != 0 and GS_new != 1 and GS_new not in initial:
                 initial.append(GS_new)
                 count += 1
             else:
