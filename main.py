@@ -134,6 +134,7 @@ def deal_in_out(fetch_in_res, fetch_out, k, dt_in, npz=no_pick_zone):
     :param dt_in: 当前所有的原料管
     :param fetch_in_res:当前剩下的原料管的长度
     :param fetch_out:正在取出的零件管的长度
+    :param k:剩余长度
     :param npz:零件管的禁接区
     :return:新的原料管，切下的长度，现在缺少的管材长度
     """
@@ -169,12 +170,9 @@ def deal_in_out(fetch_in_res, fetch_out, k, dt_in, npz=no_pick_zone):
 
     if res > pick_up:  # 将新的解加入dt_in中
         dt_in = pd.DataFrame(dt_in)
-        dt_in.columns = ["编号", "数量", "长度"]
-        if res in dt_in["长度"]:
-            a = dt_in[(dt_in.长度 == res)].index.tolist()
-            dt_in.loc[a, "数量"] += 1
-        else:
-            dt_in.loc[dt_in.shape[0]] = [dt_in.shape[0], 1, res]
+        # add element
+        dt_in.loc[dt_in.shape[0]] = [dt_in.shape[0] + 1, 1, res]
+
         dt_in = np.array(dt_in)
 
     return dt_in, use_res, fetch_out, done
@@ -229,17 +227,31 @@ def greedy_Solution(dt_in=dt_input, dt_out=datatable_output):
             if is_continue(dt_in) and (sum(dt_in[:, 1]) >= 1 or done):  # 在最后一个时会循环
                 dt_in, fetch_in = MM_fetchOne(dt_in)
                 fetch_in_res = fetch_in[2]
-                ma_input.append([fetch_in[2], fetch_in[2], cut_list,0])
+                ma_input.append([fetch_in[2], fetch_in[2], cut_list, 0])
             else:
                 return 1  # 原料管被用光
 
     for ele in ma_input:
         ele.append(ele[1] - ele[3])
 
+    # 对原料管的处理
+    dt_in = pd.DataFrame(dt_in)
+    dt_in.columns = ["编号", "数量", "长度"]
+    dt_in = dt_in.groupby("长度").sum()
+    dt_in = dt_in[dt_in["数量"] > 0]
+    dt_in["长度"] = dt_in.index.tolist()
+    dt_in.index = range(dt_in.shape[0])
+    dt_in.to_excel("./此次切割剩余原料.xlsx")
+
     # 下两行用来检测ma_input
-    # ma_input = pd.DataFrame(ma_input,
-    #                         columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度"])
-    # ma_input.to_excel("./某一次的原料切割方式.xlsx")
+    ma = copy.deepcopy(ma_input)
+    ma = pd.DataFrame(ma, columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度"])
+    ma.to_excel("./某一次的原料切割方式.xlsx")
+    ma = ma.drop(ma[ma["原料长度"] == ma["每根原料管剩余长度"]].index)
+    ma.to_excel("./某一次的原料切割方式——new.xlsx")
+    cc = np.array(ma)
+    ma_input = cc.tolist()
+
     return [ma_input, pro_output]
 
 
