@@ -257,7 +257,47 @@ def greedy_Solution(dt_in=dt_input, dt_out=datatable_output):
 
 def meng_list(GS_new):
     GM = copy.deepcopy(GS_new)
-    return GM
+    meng_1 = [[0], []]
+    meng_2 = [0]
+    meng_3 = []
+    ma_in = pd.DataFrame(GM[0])
+
+    del ma_in[4]
+    del ma_in[3]
+    del ma_in[1]
+
+    # 计算 坐标，长度
+    ma = np.array(ma_in).tolist()
+    ma.insert(0, [0, [0]])
+    for i in range(ma_in.shape[0]):
+        ma[i + 1][0] = ma[i + 1][0] + ma[i][0]
+
+    for i in range(ma_in.shape[0]):
+        for j in ma[i + 1][1]:
+            meng_1[0].append(j + ma[i][0])
+    meng_1[0].pop()
+    for i in range(len(meng_1[0])):
+        meng_1[1].append(GM[1][i][1])
+
+    # 计算 触发禁忌的管材
+    ma.pop(0)
+    ma_in = pd.DataFrame(GM[0])
+    ma = np.array(ma_in).tolist()
+    for i in ma:
+        if i[4] > 0:
+            i.append(1)
+        else:
+            i.append(0)
+
+        i.append(len(i[2]))
+
+    for i in range(ma_in.shape[0] - 1):
+        ma[i + 1][6] = ma[i + 1][6] + ma[i][6]
+        if ma[i+1][5] == 1:
+            meng_2.append(ma[i+1][6]+1)
+
+    GS = [meng_1, meng_2, meng_3]
+    return GS
 
 
 def yuan_list(GS_new):
