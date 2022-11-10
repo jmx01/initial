@@ -237,9 +237,9 @@ def greedy_Solution(dt_in=dt_input, dt_out=datatable_output):
         ele.append(ele[1] - ele[3])
 
     # 下两行用来检测ma_input
-    ma_input = pd.DataFrame(ma_input,
-                            columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度"])
-    ma_input.to_excel("./某一次的原料切割方式.xlsx")
+    # ma_input = pd.DataFrame(ma_input,
+    #                         columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度"])
+    # ma_input.to_excel("./某一次的原料切割方式.xlsx")
     return [ma_input, pro_output]
 
 
