@@ -293,8 +293,8 @@ def meng_list(GS_new):
 
     for i in range(ma_in.shape[0] - 1):
         ma[i + 1][6] = ma[i + 1][6] + ma[i][6]
-        if ma[i+1][5] == 1:
-            meng_2.append(ma[i+1][6]+1)
+        if ma[i + 1][5] == 1:
+            meng_2.append(ma[i + 1][6] + 1)
 
     GS = [meng_1, meng_2, meng_3]
     return GS
@@ -302,6 +302,29 @@ def meng_list(GS_new):
 
 def yuan_list(GS_new):
     GY = copy.deepcopy(GS_new)
+    ma_in = copy.deepcopy(GY[0])
+    GC = []
+
+    for i in ma_in:
+        i.append(len(i[2]))
+    for i in range(len(ma_in) - 1):
+        ma_in[i + 1][5] = ma_in[i + 1][5] + ma_in[i][5]
+    ma_in.insert(0, [0, 0, [0], 0, 0, 0])
+    po = GY[1]
+    for i in range(len(ma_in) - 1):
+        each = []
+        last_count = ma_in[i][5]  # 上一根原料到的根数。
+        for j in range(len(ma_in[i + 1][2])):
+            if ma_in[i + 1][2][j] == po[last_count + j][1]:
+                each.append([1, last_count + j, po[last_count + j][1]])
+            else:
+                each.append([2, last_count + j, ma_in[i + 1][2][j]])
+        if ma_in[i + 1][3] != 0:
+            each.append([2, ma_in[i + 1][5], ma_in[i+1][3]])
+        each.append([0,ma_in[i+1][4]])
+        GC.append(each)
+
+
     return GY
 
 
