@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import pandas as pd
+import copy
 import random
 
 # 读数据  基本不变动
@@ -128,7 +129,7 @@ def is_continue(dt):
         return 0  # 已用完
 
 
-def deal_in_out(fetch_in_res, fetch_out, dt_in, npz=no_pick_zone):
+def deal_in_out(fetch_in_res, fetch_out, k, dt_in, npz=no_pick_zone):
     """
     :param dt_in: 当前所有的原料管
     :param fetch_in_res:当前剩下的原料管的长度
@@ -137,6 +138,7 @@ def deal_in_out(fetch_in_res, fetch_out, dt_in, npz=no_pick_zone):
     :return:新的原料管，切下的长度，现在缺少的管材长度
     """
     res = 0
+    use_res = k  # 被使用的剩余长度
     done = 1  # 没有切割
     npz = np.array(npz)
 
@@ -155,7 +157,11 @@ def deal_in_out(fetch_in_res, fetch_out, dt_in, npz=no_pick_zone):
             if np_out[i, 1] == 0:  # 在非禁接区
                 break
             else:  # 在禁接区
-                res = fetch_in_res - np_out[i - 1, 0]
+                if i > 0:
+                    res = fetch_in_res - np_out[i - 1, 0]
+                else:
+                    res = fetch_in_res
+                use_res = use_res - res
                 done = 0
                 break
 
@@ -163,101 +169,88 @@ def deal_in_out(fetch_in_res, fetch_out, dt_in, npz=no_pick_zone):
 
     if res > pick_up:  # 将新的解加入dt_in中
         dt_in = pd.DataFrame(dt_in)
-        dt_in.columns = ["编号","数量","长度"]
+        dt_in.columns = ["编号", "数量", "长度"]
         if res in dt_in["长度"]:
             a = dt_in[(dt_in.长度 == res)].index.tolist()
             dt_in.loc[a, "数量"] += 1
         else:
             dt_in.loc[dt_in.shape[0]] = [dt_in.shape[0], 1, res]
         dt_in = np.array(dt_in)
-    else:
-        res = 0
 
-    return dt_in, res, fetch_out, done
+    return dt_in, use_res, fetch_out, done
 
 
-def cut_location(cutting, res, pro_output):
-    """
-    :param cutting: 使用的某根原材料
-    :param res: 上根原料管剩下的长度
-    :param pro_output:当前未切割的，已知切割顺序的零件管
-    :return: 这根原料管剩下的长度，原料管的切割点坐标，此根原料管切割了哪些零件管
-    """
-    res = cutting[0] + res - cutting[1]
-    if res < pro_output[0][1]:
-        return res, [], -1
-    else:
-        res = res - pro_output[0][1]
-        loc = [pro_output[0][1]]
-        index = 1
-        while res >= pro_output[index - 1][1]:
-            new = pro_output[index - 1][1]
-            res = res - new
-            loc.append(new)
-            index += 1
-        return res, loc, index
-
-
-def greedy_Solution(dt_in=dt_input, dt_out=datatable_output, npz=no_pick_zone):
+def greedy_Solution(dt_in=dt_input, dt_out=datatable_output):
     """
     贪婪解
     :param dt_in: 处理好的原料的镜像
     :param dt_out: 零件管的镜像
-    :param npz: 所有零件管的禁接矩阵
     :return:一个贪婪解，可以引入ε原则随机取
     """
-    ma_input = []  # [[原料长度，剩余长度]]
+    ma_input = []  # [[原料长度，剩余长度,[切割长度]，剩余长度的使用长度]]
     pro_output = []  # [[零件管编号，长度]]
     time1 = time.time()  # 开启一次贪婪解的初始时间
     fetch_in_res = 0  # 原料剩下的长度
+    cut_list = []  # 每根原料的切割列表
 
     dt_out, fetch_out = MM_fetchOne(dt_out, "min")  # 先取一个零件管，更新数量
     pro_output.append([fetch_out[0], fetch_out[2]])  # 添加到取出的零件管集中
     dt_in, fetch_in = MM_fetchOne(dt_in)  # 再取一个原料管
-    ma_input.append([fetch_in[2], fetch_in[2]])  # 添加到原料管集中
+    ma_input.append([fetch_in[2], fetch_in[2], cut_list, 0])  # 添加到原料管集中
     fetch_in_res += fetch_in[2]
 
-    while is_continue(dt_out) or fetch_out[2] != 0:
+    while is_continue(dt_out) or fetch_out[2] != 0:  # 当原料管还有剩余，或者拿出的零件管长度不为0
         time2 = time.time()
         time_break = time2 - time1
         if time_break > over_time:
             return 0  # 单个初始解超时判别
 
-        while fetch_in_res >= fetch_out[2]:
+        while fetch_in_res >= fetch_out[2]:  # 当剩余长度大于取出长度
+            if len(cut_list) == 0:
+                cut_list.append(fetch_out[2] - ma_input[-1][3])  # 如果是初次切割，减去上根原料剩余长度使用部分。
+            else:
+                cut_list.append(fetch_out[2])
             fetch_in_res -= fetch_out[2]
             ma_input[-1][1] -= fetch_out[2]
             fetch_out[2] = 0
-            if is_continue(dt_out):
+            if is_continue(dt_out):  # 判断零件管是否用完
                 dt_out, fetch_out = MM_fetchOne(dt_out, "min")
                 pro_output.append([fetch_out[0], fetch_out[2]])
             else:
                 break
 
         while fetch_in_res < fetch_out[2]:
-            dt_in, fetch_in_res, fetch_out, done = deal_in_out(fetch_in_res, fetch_out, dt_in)
+            ma_input[-1][2] = copy.deepcopy(cut_list)  # 把切割长度存下
+            cut_list = []
+
+            dt_in, useful_part, fetch_out, done = deal_in_out(fetch_in_res, fetch_out, ma_input[-1][1], dt_in)
+            ma_input[-1][3] = useful_part
+
             if is_continue(dt_in) and (sum(dt_in[:, 1]) >= 1 or done):  # 在最后一个时会循环
                 dt_in, fetch_in = MM_fetchOne(dt_in)
                 fetch_in_res = fetch_in[2]
-                ma_input.append([fetch_in[2], fetch_in[2]])
+                ma_input.append([fetch_in[2], fetch_in[2], cut_list,0])
             else:
                 return 1  # 原料管被用光
 
-    # 处理已经切割分配好的原料管和零件管，生成符合格式的解，此处可以研究编码
-    # ma_input[-1][1] = fetch_in_res  # 最后剩下的长度裁切下来
-    # res = 0
-    # GS_new = ma_input.copy()  # [[原料长度，剩余长度]，[切割点]]
-    # ma_input = np.array(ma_input)
-    # for i in range(len(ma_input[:, 1])):  # 所有使用原料的循环
-    #     res, loc, index = cut_location(ma_input[i], res, pro_output)
-    #     if index != -1:
-    #         del pro_output[:index]
-    #     else:
-    #         pro_output[0][1] = pro_output[0][1] - res
-    #     GS_new[i].append(loc)
-    #
-    # return GS_new  # 成功生成一个解
+    for ele in ma_input:
+        ele.append(ele[1] - ele[3])
 
+    # 下两行用来检测ma_input
+    ma_input = pd.DataFrame(ma_input,
+                            columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度"])
+    ma_input.to_excel("./某一次的原料切割方式.xlsx")
     return [ma_input, pro_output]
+
+
+def meng_list(GS_new):
+    GM = copy.deepcopy(GS_new)
+    return GM
+
+
+def yuan_list(GS_new):
+    GY = copy.deepcopy(GS_new)
+    return GY
 
 
 def random_Solution(dt_in=dt_input, dt_out=datatable_output, npz=no_pick_zone):
@@ -273,6 +266,8 @@ def random_Solution(dt_in=dt_input, dt_out=datatable_output, npz=no_pick_zone):
 
 def main():
     initial = []  # 生成64个初始解，2个贪婪解，62个随机解
+    meng_solution = []  # 孟歆尧的解
+    yuan_solution = []  # 袁浩要的解的形式
 
     if should_begin(material_length, product_length):
 
@@ -282,6 +277,8 @@ def main():
             GS_new = greedy_Solution()  # 新生成的贪婪解
             if GS_new != 0 and GS_new != 1 and GS_new not in initial:
                 initial.append(GS_new)
+                meng_solution.append(meng_list(GS_new))
+                yuan_solution.append(yuan_list(GS_new))
                 count += 1
             else:
                 print("GS_new生成出错，生成新的初始解")
@@ -292,11 +289,13 @@ def main():
         #     RS_new = random_Solution()  # 新生成的初始解
         #     if RS_new != 0 and RS_new not in initial:
         #         initial.append(RS_new)
+        #         meng_solution.append(meng_list(RS_new))
+        #         yuan_solution.append(yuan_list(RS_new))
         #         count += 1
         #     else:
         #         print("RS_new生成出错，生成新的初始解")
 
-        return initial  # 返回初始解的集
+        return initial, meng_solution, yuan_solution  # 返回初始解的集
 
     else:
         return "原料过短，无法套管"
