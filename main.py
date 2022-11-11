@@ -324,8 +324,7 @@ def yuan_list(GS_new):
         each.append([0,ma_in[i+1][4]])
         GC.append(each)
 
-
-    return GY
+    return GC
 
 
 def random_Solution(dt_in=dt_input, dt_out=datatable_output, npz=no_pick_zone):
