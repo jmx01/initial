@@ -1,6 +1,7 @@
 import time
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import copy
 import random
 
@@ -320,8 +321,8 @@ def yuan_list(GS_new):
             else:
                 each.append([2, last_count + j, ma_in[i + 1][2][j]])
         if ma_in[i + 1][3] != 0:
-            each.append([2, ma_in[i + 1][5], ma_in[i+1][3]])
-        each.append([0,ma_in[i+1][4]])
+            each.append([2, ma_in[i + 1][5], ma_in[i + 1][3]])
+        each.append([0, ma_in[i + 1][4]])
         GC.append(each)
 
     return GC
@@ -336,6 +337,33 @@ def random_Solution(dt_in=dt_input, dt_out=datatable_output, npz=no_pick_zone):
     :return:
     """
     return 0
+
+
+def color(x):
+    if x == 0:
+        return "r"
+    elif x == 1:
+        return "b"
+    elif x == 2:
+        return "y"
+
+
+def check_plot(GS_new):
+    ma = yuan_list(GS_new)[0:39]
+    width = 0.3
+
+    fig, ax = plt.subplots()
+    for i in range(len(ma)):
+        for j in range(len(ma[i])):
+
+            if j == 0:
+                ax.bar(i, ma[i][j][2], width, color=color(ma[i][j][0]))
+            elif j == len(ma[i]) - 1:
+                ax.bar(i, ma[i][j][1], width, bottom=ma[i][j - 1][2], color=color(ma[i][j][0]))
+            else:
+                ax.bar(i, ma[i][j][2], width, bottom=ma[i][j - 1][2], color=color(ma[i][j][0]))
+
+    plt.show()
 
 
 def main():
@@ -353,6 +381,7 @@ def main():
                 initial.append(GS_new)
                 meng_solution.append(meng_list(GS_new))
                 yuan_solution.append(yuan_list(GS_new))
+                # check_plot(GS_new)
                 count += 1
             else:
                 print("GS_new生成出错，生成新的初始解")
