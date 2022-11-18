@@ -376,7 +376,8 @@ class greedy_solve(object):
 
         # 下两行用来检测ma_input
         ma = copy.deepcopy(ma_input)
-        ma = pd.DataFrame(ma, columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度"])
+        ma = pd.DataFrame(ma,
+                          columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度"])
         ma.to_excel("./某一次的原料切割方式.xlsx")
         ma = ma.drop(ma[ma["原料长度"] == ma["每根原料管剩余长度"]].index)
         ma.to_excel("./某一次的原料切割方式——new.xlsx")

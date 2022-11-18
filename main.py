@@ -1,5 +1,6 @@
 import greedy_solution
 # import plot_use_file
+from greedy_solution import greedy_solve, change_solution
 
 
 def main():
@@ -7,7 +8,7 @@ def main():
     meng_solution = []  # 孟歆尧的解
     yuan_solution = []  # 袁浩要的解的形式
 
-    GS = greedy_solution.greedy_solve()
+    GS = greedy_solve()
 
     if GS.material_length >= GS.product_length:
         # 贪婪解
@@ -16,8 +17,8 @@ def main():
             GS_new = GS.solve()  # 新生成的贪婪解
             if GS_new != 0 and GS_new != 1 and GS_new not in initial:
                 initial.append(GS_new)
-                meng_solution.append(greedy_solution.change_solution(GS_new, "meng"))
-                yuan_solution.append(greedy_solution.change_solution(GS_new, "yuan"))
+                meng_solution.append(change_solution(GS_new, "meng"))
+                yuan_solution.append(change_solution(GS_new, "yuan"))
                 # plot_use_file.check_plot(GS_new)
                 count += 1
             else:
