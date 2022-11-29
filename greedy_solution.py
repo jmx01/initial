@@ -29,24 +29,21 @@ def MM_fetchOne(table, MaxOrMin="max", e=0.05):
     :param table: 原料或零件的镜像
     :return: 新的table和那根材料的名称数量和长度
     """
-    fetch = [0, 0, 0]  # 初始化取的材料
-    address = 0  # 初始化取的材料的位置
     table = np.array(table)
-    quantity = table[:, 1].copy()
+    quantity = table[:, 1]
     length = table[:, 2].copy()
     MaxOrMin = e_rule(MaxOrMin, e)
 
     if MaxOrMin == "max":  # 取最大的一根
-        for i in range(len(quantity)):
-            if quantity[i] > 0 and length[i] > fetch[2]:
-                address = i
-                fetch[2] = length[i]
+        address = length.argmax()
+        while quantity[address] == 0:
+            length[address] = 0
+            address = length.argmax()
     else:  # 取最小的一根
-        fetch[2] = 1000000  # 一个很大的常数,用来方便后续处理
-        for i in range(len(quantity)):
-            if quantity[i] > 0 and length[i] < fetch[2]:
-                address = i
-                fetch[2] = length[i]
+        address = length.argmin()
+        while quantity[address] == 0:
+            length[address] = 1000000
+            address = length.argmin()
 
     fetch = table[address, :].copy()  # fetch为复制的table第i+1行的信息
     fetch[1] = 1  # 拿走的数量为1

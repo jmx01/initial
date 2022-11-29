@@ -10,12 +10,10 @@ def primary_deal_npz(file):
     max_columns = sheet.max_column
     column = openpyxl.utils.get_column_letter(max_columns)
 
-    all_list = []
-    each_list = []
+    all_list, each_list = [], []
 
     i = 1
-    str1 = 'A' + str(i)
-    str2 = '%s' + str(i)
+    str1, str2 = 'A' + str(i), '%s' + str(i)
 
     while sheet[str1:str2 % column][0][0].value is not None:
         each_list.append(sheet[str1:str2 % column][0][0].value)
@@ -23,29 +21,17 @@ def primary_deal_npz(file):
 
         for j in range(len(sheet[str1:str2 % column][0]) - 1):
             length = sheet[str1:str2 % column][0][j + 1].value
-            str1 = 'A' + str(i + 1)
-            str2 = '%s' + str(i + 1)
+            str1, str2 = 'A' + str(i + 1), '%s' + str(i + 1)
             pro = sheet[str1:str2 % column][0][j + 1].value
-            str1 = 'A' + str(i)
-            str2 = '%s' + str(i)
+            str1, str2 = 'A' + str(i), '%s' + str(i)
             each_list[1].append([length, pro])
 
         all_list.append(each_list)
 
         i += 3
-        str1 = 'A' + str(i)
-        str2 = '%s' + str(i)
-        each_list = []
+        str1, str2, each_list = 'A' + str(i), '%s' + str(i), []
 
     return all_list
-
-
-def standard_data_input(table):
-    out_table = table.copy(deep=True)  # 深复制镜像
-    out_table = out_table.groupby("长度").sum()  # 合并长度相同的行，index变为长度
-    out_table["长度"] = out_table.index
-    out_table.index = range(len(out_table["长度"]))  # 重新变为[编号，数量，长度]的形式
-    return out_table
 
 
 def alpha_effect(table, al):
@@ -104,6 +90,13 @@ def standard_no_pick_zone(table, al):
     return zone, calculate_zone
 
 
+def standard_data_input(table):
+    table = table.groupby("长度").sum()  # 合并长度相同的行，index变为长度
+    table["长度"] = table.index
+    table.index = range(len(table["长度"]))  # 重新变为[编号，数量，长度]的形式
+    return table
+
+
 class initial_data(object):
     greedy_solution_quantity = 2  # 需要的贪婪解初始数
     random_solution_quantity = 62  # 随机解数
@@ -136,4 +129,3 @@ class initial_data(object):
         self.dt_input = dt_input
         self.no_pick_zone = no_pick_zone
         self.calculate_no_pick_zone = calculate_no_pick_zone
-
