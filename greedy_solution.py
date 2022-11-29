@@ -7,22 +7,17 @@ import random
 
 
 def e_rule(string, e):
+    return np.where(string == "max", np.where(random.random() < e, "min", string),
+                    np.where(random.random() < e, "max", string))
+
+
+def is_continue(dt):
     """
-    :param e: 概率
-    :param string: 一个字符
-    :return: 按规则返回原字符或相反的字符
+    判断零件管是否用完
+    :param dt: 零件管的镜像，一直在改变的值
+    :return: 0或1
     """
-    number = random.random()
-    if string == "max":
-        if number < e:
-            return "min"
-        else:
-            return string
-    else:
-        if number < e:
-            return "max"
-        else:
-            return string
+    return np.where(dt[:, 1].max() != 0, 1, 0)
 
 
 def MM_fetchOne(table, MaxOrMin="max", e=0.05):
@@ -57,20 +52,6 @@ def MM_fetchOne(table, MaxOrMin="max", e=0.05):
     fetch[1] = 1  # 拿走的数量为1
     table[address, 1] -= 1  # 数量-1
     return table, fetch
-
-
-def is_continue(dt):
-    """
-    判断零件管是否用完
-    :param dt: 零件管的镜像，一直在改变的值
-    :return: 0或1
-    """
-    dt = pd.DataFrame(dt)
-    for i in dt.loc[:, 1]:
-        if i > 0:
-            return 1  # 未用完
-    else:
-        return 0  # 已用完
 
 
 def change_solution(GS_new, string):
