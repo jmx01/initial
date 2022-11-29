@@ -1,5 +1,3 @@
-import greedy_solution
-# import plot_use_file
 from greedy_solution import greedy_solve, change_solution
 
 
