@@ -37,17 +37,20 @@ def primary_deal_npz(file):
 def alpha_effect(table, al):
     for i in range(len(table)):
         for j in range(len(table[i][1])):
+            window = table[i][1][j]
             if j not in [0, len(table[i][1]) - 1]:
-                if table[i][1][j][1] == 1:
-                    table[i][1][j][0] += 2 * al
+                if window[1] == 1:
+                    window[0] += 2 * al
                 else:
-                    table[i][1][j][0] -= 2 * al
+                    window[0] -= 2 * al
             else:
-                if table[i][1][j][1] == 1:
-                    table[i][1][j][0] += al
+                if window[1] == 1:
+                    window[0] += al
                 else:
-                    table[i][1][j][0] -= al
+                    window[0] -= al
 
+
+    ##
     for i in range(len(table)):
         j = 0
         while j < len(table[i][1]) - 1:

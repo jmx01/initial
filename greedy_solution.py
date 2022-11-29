@@ -54,9 +54,7 @@ def MM_fetchOne(table, MaxOrMin="max", e=0.05):
 def change_solution(GS_new, string):
     if string == "meng":
         GM = copy.deepcopy(GS_new)
-        meng_1 = [[0], []]
-        meng_2 = [0]
-        meng_3 = []
+        meng_1, meng_2, meng_3 = [[0], []], [0], []
         ma_in = pd.DataFrame(GM[0]).iloc[:, [0, 2]]
 
         # 计算 坐标，长度
@@ -77,11 +75,7 @@ def change_solution(GS_new, string):
         ma_in = pd.DataFrame(GM[0])
         ma = np.array(ma_in).tolist()
         for i in ma:
-            if i[4] > 0:
-                i.append(1)
-            else:
-                i.append(0)
-
+            np.where(i[4] > 0, i.append(1), i.append(0))
             i.append(len(i[2]))
 
         for i in range(ma_in.shape[0] - 1):
