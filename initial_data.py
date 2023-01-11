@@ -49,7 +49,6 @@ def alpha_effect(table, al):
                 else:
                     window[0] -= al
 
-
     ##
     for i in range(len(table)):
         j = 0
@@ -85,7 +84,7 @@ def standard_no_pick_zone(table, al):
                 j += 1
 
     table = alpha_effect(table, al)
-    zone = np.array(table)
+    zone = np.array(table, dtype=object)
     calculate_zone = copy.deepcopy(table)
     for i in range(len(table)):
         for j in range(len(table[i][1]) - 1):
@@ -105,7 +104,7 @@ class initial_data(object):
     random_solution_quantity = 62  # 随机解数
     over_time = 3600  # 初始解生成时间限制
     pick_up = 30  # 可放弃的新生成的原材料长度
-    alpha = 100  # 建议离禁焊区的距离
+    alpha = 0  # 建议离禁焊区的距离
     e = 0.05  # 概率随机取值
     datatable_input = 'data_input.xlsx'  # 输入文件的路径
     datatable_output = 'data_output.xlsx'  # 零件文件路径
