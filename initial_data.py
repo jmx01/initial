@@ -68,7 +68,7 @@ def alpha_effect(table, al):
     return table
 
 
-def standard_no_pick_zone(table, al):
+def standard_no_pick_zone(table, al=0):
     """
     :aid 处理禁接区（标准化禁接区）
     :param al:

@@ -23,18 +23,6 @@ def main():
             else:
                 print("GS_new生成出错，生成新的初始解")
 
-        # 随机解
-        # count = 0
-        # while count < random_solution_quantity:
-        #     RS_new = random_Solution()  # 新生成的初始解
-        #     if RS_new != 0 and RS_new not in initial:
-        #         initial.append(RS_new)
-        #         meng_solution.append(meng_list(RS_new))
-        #         yuan_solution.append(yuan_list(RS_new))
-        #         count += 1
-        #     else:
-        #         print("RS_new生成出错，生成新的初始解")
-
         return initial, meng_solution, yuan_solution  # 返回初始解的集
 
     else:

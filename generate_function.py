@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import random
 import copy
+from initial_data import initial_data, standard_no_pick_zone
 
 
 def e_rule(string, e):
@@ -114,12 +115,43 @@ def change_solution(GS_new, string):
         return GC
 
 
-def sequence_decryption(sequence_M, sequence_P):
+def sequence_add(table, sequence):
+    """对只有编码的序列添加长度"""
+    table = pd.DataFrame(table, columns=["编号", "数量", "长度"])
+    for i in range(len(sequence)):
+        index = list(table["编号"]).index(sequence[i])
+        add = list(table.iloc[index, [0, 2]])
+        del sequence[i]
+        sequence.insert(i, add)
+    return sequence
+
+
+def sequence_decode(sequence_M, sequence_P, no_pick_zone):
     """
-    用来对一个序列解密，生成解
+    针对一个固定的零件管序列，原料管的解生成
+    :param no_pick_zone: 标准禁接区
     :param sequence_M: 输入的原材料序列，原材料用长度作为标识
     :param sequence_P: 零件序列，零件用名称作为标识，已知长度，格式为[编号，长度]
     :return: 解格式
     """
-    solve = []
+    solve = copy.deepcopy(sequence_M)
+    change_zone = ["change", []]
+    cut_point = []  # 累积切割点
+    cut_num = 0  # 累积零件管长，最终为零件管总长
+    cal_ma = 0  # 累积原料长度
+
+    for i in range(len(sequence_P)):
+        name = sequence_P[i][0]
+        index = np.where(no_pick_zone[0] == name)
+        change_zone[1].extend(no_pick_zone[index][1])
+        cut_num += no_pick_zone[index][1]
+        cut_point.append(cut_num)
+
+    change_zone = [change_zone]
+    change_zone, change_zone_cal = standard_no_pick_zone(change_zone)  # 生成变化后禁接区和累积禁接区
+    change_zone_cal = change_zone_cal[1]
+
     return solve
+
+
+data = initial_data()
