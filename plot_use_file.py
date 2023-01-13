@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import greedy_solution
+from generate_function import change_solution
 
 
 def color(x):
@@ -12,7 +12,7 @@ def color(x):
 
 
 def check_plot(GS_new):
-    ma = greedy_solution.change_solution(GS_new, "yuan")[0:39]
+    ma = change_solution(GS_new, "yuan")[0:39]
     width = 0.3
 
     fig, ax = plt.subplots()
