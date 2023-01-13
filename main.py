@@ -3,7 +3,7 @@ from generate_function import change_solution
 
 
 def main():
-    initial = []  # 生成64个初始解，2个贪婪解，62个随机解
+    initial = []  # 生成64个初始解，1个贪婪解，63个随机解
     meng_solution = []  # 孟歆尧的解
     yuan_solution = []  # 袁浩要的解的形式
 
