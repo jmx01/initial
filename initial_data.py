@@ -5,7 +5,7 @@ import openpyxl
 
 
 def primary_deal_npz(file):
-    #有bug 禁接区长度不同，填充none
+    # 有bug 禁接区长度不同，填充none
     wb = openpyxl.load_workbook(file)
     sheet = wb.active
     max_columns = sheet.max_column

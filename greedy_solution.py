@@ -85,7 +85,6 @@ class greedy_solve(object):
         fetch_in_res = 0  # 原料剩下的长度
         cut_list = []  # 每根原料的切割列表
 
-        ## 零件管序列不随机，改变Fetch函数
         dt_out, fetch_out = MM_fetchOne(dt_out, "min")  # 先取一个零件管，更新数量
         pro_output.append([fetch_out[0], fetch_out[2]])  # 添加到取出的零件管集中
         dt_in, fetch_in = MM_fetchOne(dt_in)  # 再取一个原料管

@@ -112,3 +112,14 @@ def change_solution(GS_new, string):
             GC.append(each)
 
         return GC
+
+
+def sequence_decryption(sequence_M, sequence_P):
+    """
+    用来对一个序列解密，生成解
+    :param sequence_M: 输入的原材料序列，原材料用长度作为标识
+    :param sequence_P: 零件序列，零件用名称作为标识
+    :return: 解格式
+    """
+    solve = []
+    return solve
