@@ -5,6 +5,7 @@ import openpyxl
 
 
 def primary_deal_npz(file):
+    #有bug 禁接区长度不同，填充none
     wb = openpyxl.load_workbook(file)
     sheet = wb.active
     max_columns = sheet.max_column
@@ -49,7 +50,6 @@ def alpha_effect(table, al):
                 else:
                     window[0] -= al
 
-    ##
     for i in range(len(table)):
         j = 0
         while j < len(table[i][1]) - 1:
@@ -100,8 +100,8 @@ def standard_data_input(table):
 
 
 class initial_data(object):
-    greedy_solution_quantity = 2  # 需要的贪婪解初始数
-    random_solution_quantity = 62  # 随机解数
+    greedy_solution_quantity = 1  # 需要的贪婪解初始数，因为是纯贪婪，因此只用一个解
+    random_solution_quantity = 63  # 随机解数
     over_time = 3600  # 初始解生成时间限制
     pick_up = 30  # 可放弃的新生成的原材料长度
     alpha = 0  # 建议离禁焊区的距离

@@ -18,6 +18,7 @@ def main():
                 meng_solution.append(change_solution(GS_new, "meng"))
                 yuan_solution.append(change_solution(GS_new, "yuan"))
                 # plot_use_file.check_plot(GS_new)
+                ## 根据原料序列生成解的函数
                 count += 1
             else:
                 print("GS_new生成出错，生成新的初始解")
