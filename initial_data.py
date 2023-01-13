@@ -5,6 +5,7 @@ import openpyxl
 
 
 def primary_deal_npz(file):
+    """读文件，生成初始禁接区"""
     # 有bug 禁接区长度不同，填充none
     wb = openpyxl.load_workbook(file)
     sheet = wb.active
@@ -31,11 +32,11 @@ def primary_deal_npz(file):
 
         i += 3
         str1, str2, each_list = 'A' + str(i), '%s' + str(i), []
-
     return all_list
 
 
 def alpha_effect(table, al):
+    """根据建议离禁焊区距离，扩大禁接区"""
     for i in range(len(table)):
         for j in range(len(table[i][1])):
             window = table[i][1][j]
@@ -94,57 +95,11 @@ def standard_no_pick_zone(table, al):
 
 
 def standard_data_input(table):
+    """标准化原料管（将长度相同的管材合在一起 ）"""
     table = table.groupby("长度").sum()  # 合并长度相同的行，index变为长度
     table["长度"] = table.index
     table.index = range(len(table["长度"]))  # 重新变为[编号，数量，长度]的形式
     return table
-
-
-def change_alpha_affect(change_zone, al):
-    for j in range(len(change_zone)):
-        window = change_zone[j]
-        if j not in [0, len(change_zone) - 1]:
-            if window[1] == 1:
-                window[0] += 2 * al
-            else:
-                window[0] -= 2 * al
-        else:
-            if window[1] == 1:
-                window[0] += al
-            else:
-                window[0] -= al
-
-    j = 0
-    while j < len(change_zone) - 1:
-        if change_zone[j][0] < 0:
-            if j != 0:
-                change_zone[j][0] = change_zone[j][0] + change_zone[j + 1][0] + change_zone[j - 1][0]
-                del change_zone[j + 1], change_zone[j - 1]
-                j -= 1
-            else:
-                change_zone[j][0] = change_zone[j][0] + change_zone[j + 1][0]
-                del change_zone[j + 1]
-        else:
-            j += 1
-    return change_zone
-
-
-def change_standard_no_pick_zone(change_zone, al):
-    i = 0
-    while i < len(change_zone) - 1:
-        if change_zone[i][1] == change_zone[i + 1][1]:
-            change_zone[i][0] += change_zone[i + 1][0]
-            del change_zone[i + 1]
-        else:
-            i += 1
-
-    change_zone = change_alpha_affect(change_zone, al)
-    zone = np.array(change_zone, dtype=object)
-    calculate_zone = copy.deepcopy(change_zone)
-
-    for j in range(len(change_zone) - 1):
-        calculate_zone[j + 1][0] += calculate_zone[j][0]
-    return zone, calculate_zone
 
 
 class initial_data(object):
@@ -182,22 +137,24 @@ class initial_data(object):
         self.calculate_no_pick_zone = calculate_no_pick_zone
 
     def change_zone(self, index):
-        change_zone = []
+        """改变函数，为类的内函数，调用即可，index是顺序"""
+        change_zone = ["change", []]
         for i in range(len(index)):
-            change_zone.extend(self.deal_no_pick_zone[index[i]][1])
-        change_zone, change_zone_cal = change_standard_no_pick_zone(change_zone, self.alpha)
-
+            change_zone[1].extend(self.deal_no_pick_zone[index[i]][1])
+        change_zone = [change_zone]
+        change_zone, change_zone_cal = standard_no_pick_zone(change_zone, self.alpha)
         new_change_zone = []
-        if change_zone_cal[0][1] == 1:
+        new_change_zone_cal = change_zone_cal[0][1]
+        if new_change_zone_cal[0][1] == 1:
             i = 0
         else:
             i = 1
 
-        while i < 30:
+        while i < len(new_change_zone_cal):
             if i == 0:
-                new_change_zone.append([0, change_zone_cal[i][0]])
+                new_change_zone.append([0, new_change_zone_cal[i][0]])
             else:
-                new_change_zone.append([change_zone_cal[i - 1][0], change_zone_cal[i][0]])
+                new_change_zone.append([new_change_zone_cal[i - 1][0], new_change_zone_cal[i][0]])
             i = i + 2
 
         return new_change_zone, change_zone, change_zone_cal
