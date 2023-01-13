@@ -1,4 +1,5 @@
-from greedy_solution import greedy_solve, change_solution
+from greedy_solution import greedy_solve
+from generate_function import change_solution
 
 
 def main():
