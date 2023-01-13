@@ -74,6 +74,7 @@ def standard_no_pick_zone(table, al):
     :param table: 输入的原始的禁接矩阵
     :return: 处理好后的标准禁接矩阵
     """
+    table = copy.deepcopy(table)
     for i in range(len(table)):
         j = 0
         while j < len(table[i][1]) - 1:
@@ -99,6 +100,53 @@ def standard_data_input(table):
     return table
 
 
+def change_alpha_affect(change_zone, al):
+    for j in range(len(change_zone)):
+        window = change_zone[j]
+        if j not in [0, len(change_zone) - 1]:
+            if window[1] == 1:
+                window[0] += 2 * al
+            else:
+                window[0] -= 2 * al
+        else:
+            if window[1] == 1:
+                window[0] += al
+            else:
+                window[0] -= al
+
+    j = 0
+    while j < len(change_zone) - 1:
+        if change_zone[j][0] < 0:
+            if j != 0:
+                change_zone[j][0] = change_zone[j][0] + change_zone[j + 1][0] + change_zone[j - 1][0]
+                del change_zone[j + 1], change_zone[j - 1]
+                j -= 1
+            else:
+                change_zone[j][0] = change_zone[j][0] + change_zone[j + 1][0]
+                del change_zone[j + 1]
+        else:
+            j += 1
+    return change_zone
+
+
+def change_standard_no_pick_zone(change_zone, al):
+    i = 0
+    while i < len(change_zone) - 1:
+        if change_zone[i][1] == change_zone[i + 1][1]:
+            change_zone[i][0] += change_zone[i + 1][0]
+            del change_zone[i + 1]
+        else:
+            i += 1
+
+    change_zone = change_alpha_affect(change_zone, al)
+    zone = np.array(change_zone, dtype=object)
+    calculate_zone = copy.deepcopy(change_zone)
+
+    for j in range(len(change_zone) - 1):
+        calculate_zone[j + 1][0] += calculate_zone[j][0]
+    return zone, calculate_zone
+
+
 class initial_data(object):
     greedy_solution_quantity = 1  # 需要的贪婪解初始数，因为是纯贪婪，因此只用一个解
     random_solution_quantity = 63  # 随机解数
@@ -120,7 +168,7 @@ class initial_data(object):
     no_pick_zone, calculate_no_pick_zone = standard_no_pick_zone(deal_no_pick_zone, alpha)
 
     def __int__(self, greedy_solution_quantity, over_time, pick_up, alpha, e, material_length, product_length, dt_input,
-                no_pick_zone, calculate_no_pick_zone):
+                deal_no_pick_zone, no_pick_zone, calculate_no_pick_zone):
         self.greedy_solution_quantity = greedy_solution_quantity
         self.over_time = over_time
         self.pick_up = pick_up
@@ -129,5 +177,27 @@ class initial_data(object):
         self.material_length = material_length
         self.product_length = product_length
         self.dt_input = dt_input
+        self.deal_no_pick_zone = deal_no_pick_zone
         self.no_pick_zone = no_pick_zone
         self.calculate_no_pick_zone = calculate_no_pick_zone
+
+    def change_zone(self, index):
+        change_zone = []
+        for i in range(len(index)):
+            change_zone.extend(self.deal_no_pick_zone[index[i]][1])
+        change_zone, change_zone_cal = change_standard_no_pick_zone(change_zone, self.alpha)
+
+        new_change_zone = []
+        if change_zone_cal[0][1] == 1:
+            i = 0
+        else:
+            i = 1
+
+        while i < 30:
+            if i == 0:
+                new_change_zone.append([0, change_zone_cal[i][0]])
+            else:
+                new_change_zone.append([change_zone_cal[i - 1][0], change_zone_cal[i][0]])
+            i = i + 2
+
+        return new_change_zone, change_zone, change_zone_cal

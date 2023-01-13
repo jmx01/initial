@@ -118,7 +118,7 @@ def sequence_decryption(sequence_M, sequence_P):
     """
     用来对一个序列解密，生成解
     :param sequence_M: 输入的原材料序列，原材料用长度作为标识
-    :param sequence_P: 零件序列，零件用名称作为标识
+    :param sequence_P: 零件序列，零件用名称作为标识，已知长度，格式为[编号，长度]
     :return: 解格式
     """
     solve = []
