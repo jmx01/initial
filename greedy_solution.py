@@ -8,8 +8,6 @@ import copy
 
 class greedy_solve(object):
     data = initial_data.initial_data()
-    # index = [1, 3, 4, 2, 0]
-    # change_zone = data.change_zone(index)
 
     greedy_solution_quantity = data.greedy_solution_quantity  # 需要的贪婪解初始数
     over_time = data.over_time  # 初始解生成时间限制
