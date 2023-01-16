@@ -55,6 +55,12 @@ def MM_fetchOne(table, MaxOrMin="max", e=0.05, greedy=True):
 
 
 def change_solution(GS_new, string):
+    """
+    将解进行转化，便于另外两人进一步处理
+    :param GS_new: 蒋孟欣格式的解
+    :param string: 判断将解转化为何种形式，meng为转化为孟歆尧的解，yuan为转化为袁浩的解
+    :return:一个转化好的解
+    """
     if string == "meng":
         GM = copy.deepcopy(GS_new)
         meng_1, meng_2, meng_3 = [[0], []], [0], []
