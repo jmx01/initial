@@ -30,7 +30,7 @@ def primary_deal_npz(file):
 
         all_list.append(each_list)
 
-        i += 3
+        i += 3  # 依据空格距离可修改
         str1, str2, each_list = 'A' + str(i), '%s' + str(i), []
     return all_list
 
@@ -78,6 +78,7 @@ def standard_no_pick_zone(table, al=0):
     table = copy.deepcopy(table)
     for i in range(len(table)):
         j = 0
+        k = len(table[i][1]) - 1
         while j < len(table[i][1]) - 1:
             if table[i][1][j][1] == table[i][1][j + 1][1]:
                 table[i][1][j][0] += table[i][1][j + 1][0]
@@ -88,6 +89,7 @@ def standard_no_pick_zone(table, al=0):
     table = alpha_effect(table, al)
     zone = np.array(table, dtype=object)
     calculate_zone = copy.deepcopy(table)
+
     for i in range(len(table)):
         for j in range(len(table[i][1]) - 1):
             calculate_zone[i][1][j + 1][0] += calculate_zone[i][1][j][0]

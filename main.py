@@ -1,5 +1,5 @@
 from greedy_solution import greedy_solve
-from generate_function import change_solution
+from generate_function import change_solution, sequence_decode
 
 
 def main():
@@ -8,6 +8,8 @@ def main():
     yuan_solution = []  # 袁浩要的解的形式
 
     GS = greedy_solve()
+    GS_new = GS.solve()#
+    c = sequence_decode(GS_new[0], GS_new[1], GS.no_pick_zone)#
 
     if GS.material_length >= GS.product_length:
         # 贪婪解
