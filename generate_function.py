@@ -54,9 +54,10 @@ def MM_fetchOne(table, MaxOrMin="max", e=0.05, greedy=True):
     return table, fetch
 
 
+# 暂时废用此函数
 def change_solution(GS_new, string):
     """
-    将解进行转化，便于另外两人进一步处理
+    将解进行转化，便于另外两人进一步处理(大概率用不上了)
     :param GS_new: 蒋孟欣格式的解
     :param string: 判断将解转化为何种形式，meng为转化为孟歆尧的解，yuan为转化为袁浩的解
     :return:一个转化好的解
@@ -154,7 +155,6 @@ def sequence_decode(sequence_M, sequence_P, no_pick_zone):
             cut_num.append(cut_num[-1] + no_pick_zone[index, 1][0][x][0][0])
             for cc in range(len(no_pick_zone[index, 1][0][x])):
                 change_zone[1].append(no_pick_zone[index, 1][0][x][cc])  # 将禁接区加到change_zone上
-
 
     change_zone, change_zone_cal = standard_no_pick_zone([change_zone])  # 生成变化后禁接区和累积禁接区
     change_zone_cal = change_zone_cal[0][1]

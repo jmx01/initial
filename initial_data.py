@@ -109,6 +109,25 @@ def standard_data_input(table):
     return table
 
 
+def seam_num(table):
+    """给出产品管焊缝限制"""
+    table["焊缝上限"] = " "
+    for i in range(len(table)):
+        if table.iloc[i][2] <= 2000:
+            table.iloc[i, 3] = 0
+        elif 2000 < table.iloc[i][2] <= 5000:
+            table.iloc[i, 3] = 1
+        elif 5000 < table.iloc[i][2] <= 10000:
+            table.iloc[i, 3] = 2
+        elif 10000 < table.iloc[i][2] <= 15000:
+            table.iloc[i, 3] = 3
+        elif 15000 < table.iloc[i][2] <= 25000:
+            table.iloc[i, 3] = 4
+        else:
+            table.iloc[i, 3] = 4 + (table.iloc[i][2] - 25000) // 4000
+    return table
+
+
 class initial_data(object):
     greedy_solution_quantity = 1  # 需要的贪婪解初始数，因为是纯贪婪，因此只用一个解
     random_solution_quantity = 63  # 随机解数
@@ -121,7 +140,8 @@ class initial_data(object):
     deal_no_pick_zone = 'zone.xlsx'  # 禁接区文件路径
 
     datatable_input = pd.read_excel(datatable_input)  # [编号、数量、长度]  输入材料
-    datatable_output = pd.read_excel(datatable_output)  # [编号、数量、长度]  输出材料
+    datatable_output = pd.read_excel(datatable_output)  # [编号、数量、长度、焊缝上限]  输出材料
+    datatable_output = seam_num(datatable_output)
     material_length = sum(np.array(datatable_input.iloc[:, 1]) * np.array(datatable_input.iloc[:, 2]))  # 输入材料总长度
     product_length = sum(np.array(datatable_output.iloc[:, 1]) * np.array(datatable_output.iloc[:, 2]))  # 输出材料总长度
 
