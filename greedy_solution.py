@@ -6,6 +6,44 @@ import pandas as pd
 import copy
 
 
+def in_team(ma_input):
+    ma = copy.deepcopy(ma_input)
+    ma_new = []
+    for i in range(len(ma)):
+        epoch = []
+        epoch.extend(copy.deepcopy(ma[i][2]))
+        epoch.append(copy.deepcopy(ma[i][3]))
+        epoch.append(copy.deepcopy(ma[i][4]))
+        length = ma[i][0]  # 此类原料管长度
+        num = 1  # 此类原料管数量
+        ma[i] = []
+        for j in range(len(epoch)):
+            if epoch[j] != 0:
+                ma[i].append(epoch[j])
+        if len(ma[i]) != 0:
+            ma[i].sort()
+        ma[i] = [length, num, ma[i]]
+
+        j = len(ma_new)
+        add = True
+        if not ma_new:
+            ma_new.append(copy.deepcopy(ma[i]))
+            continue
+        while j > 0:
+            if ma_new[j - 1][2] != ma[i][2]:
+                j -= 1
+            else:
+                ma_new[j - 1][1] += 1
+                add = False
+                break
+        if add:
+            ma_new.append(copy.deepcopy(ma[i]))
+
+    pd.DataFrame(copy.deepcopy(ma_new), columns=["此组原料管长度", "此组原料管数量", "此组原料管切割方式"]).to_excel(
+        "./原料管组批切割序列.xlsx")
+    return ma_new
+
+
 class greedy_solve(object):
     data = initial_data()
 
@@ -143,7 +181,7 @@ class greedy_solve(object):
         ma = pd.DataFrame(ma,
                           columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度"])
         ma = ma.drop(ma[ma["原料长度"] == ma["每根原料管剩余长度"]].index)
-        ma.to_excel("./某一次的原料切割方式.xlsx")
+        ma.to_excel("./此次的原料切割通列.xlsx")
 
         ma_input = np.array(ma).tolist()
         pd.DataFrame(copy.deepcopy(pro_output), columns=["产品管编号", "产品管长度"]).to_excel("./产品切割序列.xlsx")

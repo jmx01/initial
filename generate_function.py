@@ -81,7 +81,7 @@ def sequence_decode(sequence_M, sequence_P, no_pick_zone):
         for x in range(len(no_pick_zone[index, 1][0])):
             cut_num.append(cut_num[-1] + no_pick_zone[index, 1][0][x][0][0])
             for cc in range(len(no_pick_zone[index, 1][0][x])):
-                change_zone[1].append(no_pick_zone[index, 1][0][x][cc])  # 将禁接区加到change_zone上
+                change_zone[1].append(copy.deepcopy(no_pick_zone[index, 1][0][x][cc]))  # 将禁接区加到change_zone上
 
     change_zone, change_zone_cal = standard_no_pick_zone([change_zone])  # 生成变化后禁接区和累积禁接区
     change_zone_cal = change_zone_cal[0][1]

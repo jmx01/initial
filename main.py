@@ -1,4 +1,4 @@
-from greedy_solution import greedy_solve
+from greedy_solution import greedy_solve,in_team
 from generate_function import sequence_decode
 
 
@@ -7,6 +7,7 @@ def main():
 
     GS = greedy_solve()
     GS_new = GS.solve()  #
+    new = in_team(GS_new[0])
     c = sequence_decode(GS_new[0], GS_new[1], GS.no_pick_zone)  #
 
     if GS.material_length >= GS.product_length:
@@ -28,5 +29,5 @@ def main():
         return 0
 
 
-if __name__ == "main":
-    main()
+# if __name__ == "main":
+main()

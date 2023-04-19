@@ -79,7 +79,6 @@ def standard_no_pick_zone(table, al=0):
     :param table: 输入的原始的禁接矩阵
     :return: 处理好后的标准禁接矩阵
     """
-    # print(id(table[0][1][0:20]))
     table = copy.deepcopy(table)
     for i in range(len(table)):
         j = 0
