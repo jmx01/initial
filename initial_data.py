@@ -150,7 +150,7 @@ class initial_data(object):
     no_pick_zone, calculate_no_pick_zone = standard_no_pick_zone(deal_no_pick_zone, alpha)
 
     def __int__(self, greedy_solution_quantity, over_time, pick_up, alpha, e, material_length, product_length, dt_input,
-                datatable_output,deal_no_pick_zone, no_pick_zone, calculate_no_pick_zone):
+                datatable_output, deal_no_pick_zone, no_pick_zone, calculate_no_pick_zone):
         self.greedy_solution_quantity = greedy_solution_quantity
         self.over_time = over_time
         self.pick_up = pick_up

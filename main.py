@@ -28,4 +28,5 @@ def main():
         return 0
 
 
-main()
+if __name__ == "main":
+    main()
