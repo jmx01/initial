@@ -5,11 +5,6 @@ import copy
 from initial_data import initial_data, standard_no_pick_zone
 
 
-def e_rule(string, e):
-    return np.where(string == "max", np.where(random.random() < e, "min", string),
-                    np.where(random.random() < e, "max", string))
-
-
 def is_continue(dt):
     """
     判断零件管是否用完
@@ -35,7 +30,8 @@ def MM_fetchOne(table, MaxOrMin="max", e=0.05, greedy=True):
     if greedy:
         pass
     else:
-        MaxOrMin = e_rule(MaxOrMin, e)
+        MaxOrMin = np.where(MaxOrMin == "max", np.where(random.random() < e, "min", MaxOrMin),
+                            np.where(random.random() < e, "max", MaxOrMin))
 
     if MaxOrMin == "max":  # 取最大的一根
         address = length.argmax()
@@ -52,75 +48,6 @@ def MM_fetchOne(table, MaxOrMin="max", e=0.05, greedy=True):
     fetch[1] = 1  # 拿走的数量为1
     table[address, 1] -= 1  # 数量-1
     return table, fetch
-
-
-# 暂时废用此函数
-def change_solution(GS_new, string):
-    """
-    将解进行转化，便于另外两人进一步处理(大概率用不上了)
-    :param GS_new: 蒋孟欣格式的解
-    :param string: 判断将解转化为何种形式，meng为转化为孟歆尧的解，yuan为转化为袁浩的解
-    :return:一个转化好的解
-    """
-    if string == "meng":
-        GM = copy.deepcopy(GS_new)
-        meng_1, meng_2, meng_3 = [[0], []], [0], []
-        ma_in = pd.DataFrame(GM[0]).iloc[:, [0, 2]]
-
-        # 计算 坐标，长度
-        ma = np.array(ma_in).tolist()
-        ma.insert(0, [0, [0]])
-        for i in range(ma_in.shape[0]):
-            ma[i + 1][0] = ma[i + 1][0] + ma[i][0]
-
-        for i in range(ma_in.shape[0]):
-            for j in ma[i + 1][1]:
-                meng_1[0].append(j + ma[i][0])
-        meng_1[0].pop()
-        for i in range(len(meng_1[0])):
-            meng_1[1].append(GM[1][i][1])
-
-        # 计算 触发禁忌的管材
-        ma.pop(0)
-        ma_in = pd.DataFrame(GM[0])
-        ma = np.array(ma_in).tolist()
-        for i in ma:
-            np.where(i[4] > 0, i.append(1), i.append(0))
-            i.append(len(i[2]))
-
-        for i in range(ma_in.shape[0] - 1):
-            ma[i + 1][6] = ma[i + 1][6] + ma[i][6]
-            if ma[i + 1][5] == 1:
-                meng_2.append(ma[i + 1][6] + 1)
-
-        GS = [meng_1, meng_2, meng_3]
-        return GS
-
-    elif string == "yuan":
-        GY = copy.deepcopy(GS_new)
-        ma_in = copy.deepcopy(GY[0])
-        GC = []
-
-        for i in ma_in:
-            i.append(len(i[2]))
-        for i in range(len(ma_in) - 1):
-            ma_in[i + 1][5] = ma_in[i + 1][5] + ma_in[i][5]
-        ma_in.insert(0, [0, 0, [0], 0, 0, 0])
-        po = GY[1]
-        for i in range(len(ma_in) - 1):
-            each = []
-            last_count = ma_in[i][5]  # 上一根原料到的根数。
-            for j in range(len(ma_in[i + 1][2])):
-                if ma_in[i + 1][2][j] == po[last_count + j][1]:
-                    each.append([1, last_count + j, po[last_count + j][1]])
-                else:
-                    each.append([2, last_count + j, ma_in[i + 1][2][j]])
-            if ma_in[i + 1][3] != 0:
-                each.append([2, ma_in[i + 1][5], ma_in[i + 1][3]])
-            each.append([0, ma_in[i + 1][4]])
-            GC.append(each)
-
-        return GC
 
 
 def sequence_add(table, sequence):

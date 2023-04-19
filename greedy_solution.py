@@ -147,4 +147,5 @@ class greedy_solve(object):
 
         ma_input = np.array(ma).tolist()
         pd.DataFrame(copy.deepcopy(pro_output), columns=["产品管编号", "产品管长度"]).to_excel("./产品切割序列.xlsx")
+
         return [ma_input, pro_output]
