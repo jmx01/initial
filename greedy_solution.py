@@ -6,7 +6,13 @@ import pandas as pd
 import copy
 
 
+def weld_point_num(ma_input):
+    count = 0
+
+    return count
+
 def in_team(ma_input):
+    """将原料管输出转化为组批输出"""
     ma = copy.deepcopy(ma_input)
     ma_new = []
     for i in range(len(ma)):
@@ -16,13 +22,14 @@ def in_team(ma_input):
         epoch.append(copy.deepcopy(ma[i][4]))
         length = ma[i][0]  # 此类原料管长度
         num = 1  # 此类原料管数量
+        odd = 1 - ma[i][-1] / length
         ma[i] = []
         for j in range(len(epoch)):
             if epoch[j] != 0:
                 ma[i].append(epoch[j])
         if len(ma[i]) != 0:
             ma[i].sort()
-        ma[i] = [length, num, ma[i]]
+        ma[i] = [length, num, odd, ma[i]]
 
         j = len(ma_new)
         add = True
@@ -39,7 +46,8 @@ def in_team(ma_input):
         if add:
             ma_new.append(copy.deepcopy(ma[i]))
 
-    pd.DataFrame(copy.deepcopy(ma_new), columns=["此组原料管长度", "此组原料管数量", "此组原料管切割方式"]).to_excel(
+    pd.DataFrame(copy.deepcopy(ma_new),
+                 columns=["此组原料管长度", "此组原料管数量", "此组原料管利用率", "此组原料管切割方式"]).to_excel(
         "./原料管组批切割序列.xlsx")
     return ma_new
 
@@ -133,7 +141,7 @@ class greedy_solve(object):
             time2 = time.time()
             time_break = time2 - time1
             if time_break > self.over_time:
-                return 0  # 单个初始解超时判别
+                return 10  # 错误警告，单个初始解超时判别
 
             while fetch_in_res >= fetch_out[2]:  # 当剩余长度大于取出长度
                 if len(cut_list) == 0:
@@ -162,7 +170,7 @@ class greedy_solve(object):
                     fetch_in_res = fetch_in[2]
                     ma_input.append([fetch_in[2], fetch_in[2], cut_list, 0])
                 else:
-                    return 1  # 原料管被用光
+                    return 11  # 错误警告，原料管被用光
 
         for ele in ma_input:
             ele.append(ele[1] - ele[3])
@@ -184,6 +192,6 @@ class greedy_solve(object):
         ma.to_excel("./此次的原料切割通列.xlsx")
 
         ma_input = np.array(ma).tolist()
-        pd.DataFrame(copy.deepcopy(pro_output), columns=["产品管编号", "产品管长度"]).to_excel("./产品切割序列.xlsx")
+        pd.DataFrame(copy.deepcopy(pro_output), columns=["产品管编号", "产品管长度"]).to_excel("./产品生成序列.xlsx")
 
         return [ma_input, pro_output]
