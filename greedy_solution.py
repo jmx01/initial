@@ -142,10 +142,9 @@ class greedy_solve(object):
         ma = copy.deepcopy(ma_input)
         ma = pd.DataFrame(ma,
                           columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度"])
-        ma.to_excel("./某一次的原料切割方式.xlsx")
         ma = ma.drop(ma[ma["原料长度"] == ma["每根原料管剩余长度"]].index)
-        ma.to_excel("./某一次的原料切割方式——new.xlsx")
+        ma.to_excel("./某一次的原料切割方式.xlsx")
 
         ma_input = np.array(ma).tolist()
-
+        pd.DataFrame(copy.deepcopy(pro_output), columns=["产品管编号", "产品管长度"]).to_excel("./产品切割序列.xlsx")
         return [ma_input, pro_output]

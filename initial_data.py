@@ -32,6 +32,10 @@ def primary_deal_npz(file):
 
         i += 3  # 依据空格距离可修改
         str1, str2, each_list = 'A' + str(i), '%s' + str(i), []
+
+    for i in range(len(all_list)):  # 去除尾部空
+        while all_list[i][1][-1][0] is None:
+            all_list[i][1].pop()
     return all_list
 
 
@@ -75,6 +79,7 @@ def standard_no_pick_zone(table, al=0):
     :param table: 输入的原始的禁接矩阵
     :return: 处理好后的标准禁接矩阵
     """
+    # print(id(table[0][1][0:20]))
     table = copy.deepcopy(table)
     for i in range(len(table)):
         j = 0
