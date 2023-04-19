@@ -1,5 +1,5 @@
 import time
-import initial_data
+from initial_data import initial_data
 from generate_function import is_continue, MM_fetchOne
 import numpy as np
 import pandas as pd
@@ -7,7 +7,7 @@ import copy
 
 
 class greedy_solve(object):
-    data = initial_data.initial_data()
+    data = initial_data()
 
     greedy_solution_quantity = data.greedy_solution_quantity  # 需要的贪婪解初始数
     over_time = data.over_time  # 初始解生成时间限制
