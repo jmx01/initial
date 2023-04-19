@@ -11,6 +11,7 @@ def weld_point_num(ma_input):
 
     return count
 
+
 def in_team(ma_input):
     """将原料管输出转化为组批输出"""
     ma = copy.deepcopy(ma_input)
@@ -192,6 +193,6 @@ class greedy_solve(object):
         ma.to_excel("./此次的原料切割通列.xlsx")
 
         ma_input = np.array(ma).tolist()
-        pd.DataFrame(copy.deepcopy(pro_output), columns=["产品管编号", "产品管长度"]).to_excel("./产品生成序列.xlsx")
+        pd.DataFrame(copy.deepcopy(pro_output), columns=["产品管编号", "产品管长度"]).to_excel("./产品管生成序列.xlsx")
 
         return [ma_input, pro_output]
