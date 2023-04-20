@@ -82,7 +82,6 @@ def standard_no_pick_zone(table, al=0):
     table = copy.deepcopy(table)
     for i in range(len(table)):
         j = 0
-        k = len(table[i][1]) - 1
         while j < len(table[i][1]) - 1:
             if table[i][1][j][1] == table[i][1][j + 1][1]:
                 table[i][1][j][0] += table[i][1][j + 1][0]
@@ -131,7 +130,7 @@ class initial_data(object):
     greedy_solution_quantity = 1  # 需要的贪婪解初始数，因为是纯贪婪，因此只用一个解
     random_solution_quantity = 63  # 随机解数
     over_time = 3600  # 初始解生成时间限制
-    pick_up = 30  # 可放弃的新生成的原材料长度
+    pick_up = 30  # 可放弃的最大材料长度
     alpha = 0  # 建议离禁焊区的距离
     e = 0.05  # 概率随机取值
     datatable_input = 'data_input.xlsx'  # 输入文件的路径

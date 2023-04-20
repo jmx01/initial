@@ -1,4 +1,4 @@
-from greedy_solution import greedy_solve,in_team
+from greedy_solution import greedy_solve
 from generate_function import sequence_decode
 
 
@@ -6,16 +6,15 @@ def main():
     initial = []  # 生成64个初始解，1个贪婪解，63个随机解
 
     GS = greedy_solve()
-    GS_new = GS.solve()  #
-    new = in_team(GS_new[0])
+    GS_new,t_greedy,team = GS.solve()  #
     c = sequence_decode(GS_new[0], GS_new[1], GS.no_pick_zone)  #
 
     if GS.material_length >= GS.product_length:
         # 贪婪解
         count = 0
         while count < GS.greedy_solution_quantity:
-            GS_new = GS.solve()  # 新生成的贪婪解
-            if GS_new != 0 and GS_new != 1 and GS_new not in initial:
+            GS_new,t_greedy,team = GS.solve()  # 新生成的贪婪解
+            if GS_new != 10 and GS_new != 111 and GS_new not in initial:
                 initial.append(GS_new)
                 # plot_use_file.check_plot(GS_new)
                 count += 1
@@ -26,7 +25,7 @@ def main():
 
     else:
         print("原料过短，无法套管")
-        return 0
+        return 110
 
 
 # if __name__ == "main":

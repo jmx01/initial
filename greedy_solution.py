@@ -12,10 +12,9 @@ def weld_point_num(ma_input):
     return count
 
 
-def in_team(ma_input):
-    """将原料管输出转化为组批输出"""
+def list_to_team(ma_input):
     ma = copy.deepcopy(ma_input)
-    ma_new = []
+    split_method = []
     for i in range(len(ma)):
         epoch = []
         epoch.extend(copy.deepcopy(ma[i][2]))
@@ -31,21 +30,18 @@ def in_team(ma_input):
         if len(ma[i]) != 0:
             ma[i].sort()
         ma[i] = [length, num, odd, ma[i]]
+    return ma, split_method
 
-        j = len(ma_new)
-        add = True
-        if not ma_new:
+
+def in_team(ma, split_method):
+    """将原料管输出转化为组批输出"""
+    ma_new = []
+    for i in range(len(ma)):
+        if ma[i][3] not in split_method:
+            split_method.append(copy.deepcopy(ma[i][3]))
             ma_new.append(copy.deepcopy(ma[i]))
-            continue
-        while j > 0:
-            if ma_new[j - 1][2] != ma[i][2]:
-                j -= 1
-            else:
-                ma_new[j - 1][1] += 1
-                add = False
-                break
-        if add:
-            ma_new.append(copy.deepcopy(ma[i]))
+        else:
+            ma_new[split_method.index(ma[i][3])][1] += 1
 
     pd.DataFrame(copy.deepcopy(ma_new),
                  columns=["此组原料管长度", "此组原料管数量", "此组原料管利用率", "此组原料管切割方式"]).to_excel(
@@ -171,7 +167,7 @@ class greedy_solve(object):
                     fetch_in_res = fetch_in[2]
                     ma_input.append([fetch_in[2], fetch_in[2], cut_list, 0])
                 else:
-                    return 11  # 错误警告，原料管被用光
+                    return 111  # 错误警告，原料管被用光
 
         for ele in ma_input:
             ele.append(ele[1] - ele[3])
@@ -190,9 +186,24 @@ class greedy_solve(object):
         ma = pd.DataFrame(ma,
                           columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度"])
         ma = ma.drop(ma[ma["原料长度"] == ma["每根原料管剩余长度"]].index)
-        ma.to_excel("./此次的原料切割通列.xlsx")
+        # ma.to_excel("./此次的原料切割通列.xlsx")
+        ma = np.array(ma).tolist()
+        ma_input = copy.deepcopy(ma)
 
-        ma_input = np.array(ma).tolist()
         pd.DataFrame(copy.deepcopy(pro_output), columns=["产品管编号", "产品管长度"]).to_excel("./产品管生成序列.xlsx")
 
-        return [ma_input, pro_output]
+        ma_new, split_method = list_to_team(ma_input)
+        team = in_team(ma_new, split_method)
+        team_new = copy.deepcopy(team)
+        for i in range(len(ma_new)):
+            index_1 = split_method.index(ma_new[i][3])
+            index_2 = team[index_1][1] - team_new[index_1][1] + 1
+            ma[i].append(index_1)
+            ma[i].append(index_2)
+            team_new[index_1][1] -= 1
+        pd.DataFrame(copy.deepcopy(ma),
+                     columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度",
+                              "原料所属组批次", "该组批已使用根数"]).to_excel("./此次的原料切割通列.xlsx")
+
+        time3 = time.time()
+        return [ma_input, pro_output], time3 - time1, team
