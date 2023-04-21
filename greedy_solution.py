@@ -6,6 +6,10 @@ import pandas as pd
 import copy
 
 
+def decode_known_sequence(ma_input, pro_output):
+    return
+
+
 def weld_point_num(ma_input):
     count = 0
 
@@ -186,7 +190,6 @@ class greedy_solve(object):
         ma = pd.DataFrame(ma,
                           columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度"])
         ma = ma.drop(ma[ma["原料长度"] == ma["每根原料管剩余长度"]].index)
-        # ma.to_excel("./此次的原料切割通列.xlsx")
         ma = np.array(ma).tolist()
         ma_input = copy.deepcopy(ma)
 
@@ -194,6 +197,7 @@ class greedy_solve(object):
 
         ma_new, split_method = list_to_team(ma_input)
         team = in_team(ma_new, split_method)
+
         team_new = copy.deepcopy(team)
         for i in range(len(ma_new)):
             index_1 = split_method.index(ma_new[i][3])
