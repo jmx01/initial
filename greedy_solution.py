@@ -8,16 +8,6 @@ from generate_function import is_continue, MM_fetchOne
 from initial_data import initial_data
 
 
-def decode_known_sequence(ma_input, pro_output):
-    return
-
-
-def weld_point_num(ma_input):
-    count = 0
-
-    return count
-
-
 def list_to_team(ma_input):
     ma = copy.deepcopy(ma_input)
     for i in range(len(ma)):
@@ -29,13 +19,14 @@ def list_to_team(ma_input):
         num = 1  # 此类原料管数量
         odd = 1 - ma[i][-1] / length
         last = ma[i][-1]
+        use = length - last
         ma[i] = []
         for j in range(len(epoch)):
             if epoch[j] != 0:
                 ma[i].append(epoch[j])
         if len(ma[i]) != 0:
             ma[i].sort()
-        ma[i] = [length, num, last, odd, ma[i]]
+        ma[i] = [length, num, use, last, odd, ma[i]]
     return ma
 
 
@@ -51,10 +42,18 @@ def in_team(ma):
             ma_new[split_method.index(ma[i][-1])][1] += 1
 
     pd.DataFrame(copy.deepcopy(ma_new),
-                 columns=["此组原料管长度", "此组原料管数量", "此组原料管利用率", "此组管每根舍弃长度",
-                          "此组原料管切割方式"]).to_excel(
-        "./原料管组批切割序列.xlsx")
+                 columns=["此组原料管长度", "此组原料管数量", "此组管每根使用长度", "此组管每根舍弃长度",
+                          "此组原料管利用率", "此组原料管切割方式"]).to_excel("./原料管组批切割序列.xlsx")
     return ma_new, split_method
+
+
+def weld_point_num(ma_input):
+    count = 0
+    for i in range(len(ma_input)):
+        if ma_input[i][3] == 0:
+            count += 1
+    count = len(ma_input) - 1 - count
+    return count
 
 
 class greedy_solve(object):
@@ -134,7 +133,7 @@ class greedy_solve(object):
             if time_break > self.over_time:
                 return 10  # 错误警告，单个初始解超时判别
 
-            while fetch_in_res >= fetch_out[2]:  # 当剩余长度大于取出长度
+            while fetch_in_res >= fetch_out[2]:  # 当剩余长度大于等于取出长度
                 if len(cut_list) == 0:
                     cut_list.append(fetch_out[2] - ma_input[-1][3])  # 如果是初次切割，减去上根原料剩余长度使用部分。
                 else:
@@ -178,10 +177,10 @@ class greedy_solve(object):
         # 下两行用来检测ma_input
         ma = copy.deepcopy(ma_input)
         ma = pd.DataFrame(ma,
-                          columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度"])
-        ma = ma.drop(ma[ma["原料长度"] == ma["每根原料管剩余长度"]].index)
+                          columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "舍弃长度"])
+        ma = ma.drop(ma[ma["原料长度"] == ma["舍弃长度"]].index)
         ma = np.array(ma).tolist()
-        ma_input = copy.deepcopy(ma)
+        ma_input = copy.deepcopy(ma)  # 原来的input
 
         pd.DataFrame(copy.deepcopy(pro_output), columns=["产品管编号", "产品管长度"]).to_excel("./产品管生成序列.xlsx")
 
@@ -196,8 +195,9 @@ class greedy_solve(object):
             ma[i].append(index_2)
             team_new[index_1][1] -= 1
         pd.DataFrame(copy.deepcopy(ma),
-                     columns=["原料长度", "剩余长度", "切割向量", "舍弃长度", "剩余长度中有效使用比例",
+                     columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用长度", "舍弃长度",
                               "原料所属组批次", "该组批已使用根数"]).to_excel("./此次的原料切割通列.xlsx")
 
+        weld = weld_point_num(ma)
         time3 = time.time()
-        return [ma_input, pro_output], time3 - time1, team
+        return [ma_input, pro_output], time3 - time1, team, weld
