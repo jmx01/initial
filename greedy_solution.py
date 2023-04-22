@@ -35,7 +35,7 @@ def list_to_team(ma_input):
                 ma[i].append(epoch[j])
         if len(ma[i]) != 0:
             ma[i].sort()
-        ma[i] = [length, num, odd, last, ma[i]]
+        ma[i] = [length, num, last, odd, ma[i]]
     return ma
 
 
@@ -196,7 +196,7 @@ class greedy_solve(object):
             ma[i].append(index_2)
             team_new[index_1][1] -= 1
         pd.DataFrame(copy.deepcopy(ma),
-                     columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用比例", "舍弃长度",
+                     columns=["原料长度", "剩余长度", "切割向量", "舍弃长度", "剩余长度中有效使用比例",
                               "原料所属组批次", "该组批已使用根数"]).to_excel("./此次的原料切割通列.xlsx")
 
         time3 = time.time()
