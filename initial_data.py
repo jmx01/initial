@@ -1,7 +1,8 @@
-import numpy as np
-import pandas as pd
 import copy
+
+import numpy as np
 import openpyxl
+import pandas as pd
 
 
 def primary_deal_npz(file):
@@ -146,21 +147,6 @@ class initial_data(object):
     deal_no_pick_zone = primary_deal_npz(deal_no_pick_zone)  # 将文件处理为可处理的形式
     dt_input = standard_data_input(datatable_input)  #
     no_pick_zone, calculate_no_pick_zone = standard_no_pick_zone(deal_no_pick_zone, alpha)
-
-    def __int__(self, greedy_solution_quantity, over_time, pick_up, alpha, e, material_length, product_length, dt_input,
-                datatable_output, deal_no_pick_zone, no_pick_zone, calculate_no_pick_zone):
-        self.greedy_solution_quantity = greedy_solution_quantity
-        self.over_time = over_time
-        self.pick_up = pick_up
-        self.alpha = alpha
-        self.e = e
-        self.material_length = material_length
-        self.product_length = product_length
-        self.dt_input = dt_input
-        self.dt_output = datatable_output
-        self.deal_no_pick_zone = deal_no_pick_zone
-        self.no_pick_zone = no_pick_zone
-        self.calculate_no_pick_zone = calculate_no_pick_zone
 
     def change_zone(self, index):
         """改变函数，为类的内函数，调用即可，index是顺序"""

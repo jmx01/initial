@@ -1,9 +1,11 @@
+import copy
 import time
-from initial_data import initial_data
-from generate_function import is_continue, MM_fetchOne
+
 import numpy as np
 import pandas as pd
-import copy
+
+from generate_function import is_continue, MM_fetchOne
+from initial_data import initial_data
 
 
 def decode_known_sequence(ma_input, pro_output):
@@ -18,7 +20,6 @@ def weld_point_num(ma_input):
 
 def list_to_team(ma_input):
     ma = copy.deepcopy(ma_input)
-    split_method = []
     for i in range(len(ma)):
         epoch = []
         epoch.extend(copy.deepcopy(ma[i][2]))
@@ -27,30 +28,33 @@ def list_to_team(ma_input):
         length = ma[i][0]  # 此类原料管长度
         num = 1  # 此类原料管数量
         odd = 1 - ma[i][-1] / length
+        last = ma[i][-1]
         ma[i] = []
         for j in range(len(epoch)):
             if epoch[j] != 0:
                 ma[i].append(epoch[j])
         if len(ma[i]) != 0:
             ma[i].sort()
-        ma[i] = [length, num, odd, ma[i]]
-    return ma, split_method
+        ma[i] = [length, num, odd, last, ma[i]]
+    return ma
 
 
-def in_team(ma, split_method):
+def in_team(ma):
     """将原料管输出转化为组批输出"""
     ma_new = []
+    split_method = []
     for i in range(len(ma)):
-        if ma[i][3] not in split_method:
-            split_method.append(copy.deepcopy(ma[i][3]))
+        if ma[i][-1] not in split_method:
+            split_method.append(copy.deepcopy(ma[i][-1]))
             ma_new.append(copy.deepcopy(ma[i]))
         else:
-            ma_new[split_method.index(ma[i][3])][1] += 1
+            ma_new[split_method.index(ma[i][-1])][1] += 1
 
     pd.DataFrame(copy.deepcopy(ma_new),
-                 columns=["此组原料管长度", "此组原料管数量", "此组原料管利用率", "此组原料管切割方式"]).to_excel(
+                 columns=["此组原料管长度", "此组原料管数量", "此组原料管利用率", "此组管每根舍弃长度",
+                          "此组原料管切割方式"]).to_excel(
         "./原料管组批切割序列.xlsx")
-    return ma_new
+    return ma_new, split_method
 
 
 class greedy_solve(object):
@@ -69,20 +73,6 @@ class greedy_solve(object):
     deal_no_pick_zone = data.deal_no_pick_zone
     dt_input = data.dt_input
     no_pick_zone, calculate_no_pick_zone = data.no_pick_zone, data.calculate_no_pick_zone
-
-    def __int__(self, greedy_solution_quantity, over_time, pick_up, alpha, e, material_length, product_length, dt_input,
-                no_pick_zone, calculate_no_pick_zone):
-
-        self.greedy_solution_quantity = greedy_solution_quantity
-        self.over_time = over_time
-        self.pick_up = pick_up
-        self.alpha = alpha
-        self.e = e
-        self.material_length = material_length
-        self.product_length = product_length
-        self.dt_input = dt_input
-        self.no_pick_zone = no_pick_zone
-        self.calculate_no_pick_zone = calculate_no_pick_zone
 
     def __generate_tube_zone(self, x):
         npz = np.array(self.no_pick_zone)
@@ -195,18 +185,18 @@ class greedy_solve(object):
 
         pd.DataFrame(copy.deepcopy(pro_output), columns=["产品管编号", "产品管长度"]).to_excel("./产品管生成序列.xlsx")
 
-        ma_new, split_method = list_to_team(ma_input)
-        team = in_team(ma_new, split_method)
+        ma_new = list_to_team(ma_input)
+        team, split_method = in_team(ma_new)
 
         team_new = copy.deepcopy(team)
         for i in range(len(ma_new)):
-            index_1 = split_method.index(ma_new[i][3])
+            index_1 = split_method.index(ma_new[i][-1])
             index_2 = team[index_1][1] - team_new[index_1][1] + 1
             ma[i].append(index_1)
             ma[i].append(index_2)
             team_new[index_1][1] -= 1
         pd.DataFrame(copy.deepcopy(ma),
-                     columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用部分", "每根原料管剩余长度",
+                     columns=["原料长度", "剩余长度", "切割向量", "剩余长度中有效使用比例", "舍弃长度",
                               "原料所属组批次", "该组批已使用根数"]).to_excel("./此次的原料切割通列.xlsx")
 
         time3 = time.time()

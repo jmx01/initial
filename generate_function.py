@@ -1,7 +1,9 @@
+import copy
+import random
+
 import numpy as np
 import pandas as pd
-import random
-import copy
+
 from initial_data import initial_data, standard_no_pick_zone
 
 
