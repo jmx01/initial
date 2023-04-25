@@ -1,4 +1,5 @@
 import copy
+from decimal import Decimal
 
 import numpy as np
 import openpyxl
@@ -7,7 +8,6 @@ import pandas as pd
 
 def primary_deal_npz(file):
     """读文件，生成初始禁接区"""
-    # 有bug 禁接区长度不同，填充none
     wb = openpyxl.load_workbook(file)
     sheet = wb.active
     max_columns = sheet.max_column
@@ -37,6 +37,11 @@ def primary_deal_npz(file):
     for i in range(len(all_list)):  # 去除尾部空
         while all_list[i][1][-1][0] is None:
             all_list[i][1].pop()
+
+    for i in range(len(all_list)):
+        for j in range(len(all_list[i][1])):
+            all_list[i][1][j][0] = Decimal(str(all_list[i][1][j][0])).quantize(Decimal("0.01"),
+                                                                               rounding="ROUND_HALF_UP")
     return all_list
 
 
@@ -100,11 +105,18 @@ def standard_no_pick_zone(table, al=0):
     return zone, calculate_zone
 
 
+def standard_data_output(table):
+    for i in range(len(table)):
+        table.iloc[i, 2] = Decimal(str(table.iloc[i, 2])).quantize(Decimal("0.01"), rounding="ROUND_HALF_UP")
+    return table
+
+
 def standard_data_input(table):
     """标准化原料管（将长度相同的管材合在一起 ）"""
     table = table.groupby("长度").sum()  # 合并长度相同的行，index变为长度
     table["长度"] = table.index
     table.index = range(len(table["长度"]))  # 重新变为[编号，数量，长度]的形式
+    table = standard_data_output(table)
     return table
 
 
@@ -134,19 +146,24 @@ class initial_data(object):
     pick_up = 30  # 可放弃的最大材料长度
     alpha = 0  # 建议离禁焊区的距离
     e = 0.05  # 概率随机取值
-    datatable_input = 'data_input.xlsx'  # 输入文件的路径
-    datatable_output = 'data_output.xlsx'  # 零件文件路径
-    deal_no_pick_zone = 'zone.xlsx'  # 禁接区文件路径
+    # datatable_input = 'data_input.xlsx'  # 输入文件的路径
+    # datatable_output = 'data_output.xlsx'  # 零件文件路径
+    # deal_no_pick_zone = 'zone.xlsx'  # 禁接区文件路径
+    datatable_input_1 = 'data_input-1.xlsx'  # 输入文件的路径
+    datatable_output_1 = 'data_output-1.xlsx'  # 零件文件路径
+    deal_no_pick_zone_1 = 'zone-1.xlsx'  # 禁接区文件路径
 
-    datatable_input = pd.read_excel(datatable_input)  # [编号、数量、长度]  输入材料
-    datatable_output = pd.read_excel(datatable_output)  # [编号、数量、长度、焊缝上限]  输出材料
+
+    datatable_input = pd.read_excel(datatable_input_1)  # [编号、数量、长度]  输入材料
+    datatable_output = pd.read_excel(datatable_output_1)  # [编号、数量、长度、焊缝上限]  输出材料
     datatable_output = seam_num(datatable_output)
     material_length = sum(np.array(datatable_input.iloc[:, 1]) * np.array(datatable_input.iloc[:, 2]))  # 输入材料总长度
     product_length = sum(np.array(datatable_output.iloc[:, 1]) * np.array(datatable_output.iloc[:, 2]))  # 输出材料总长度
 
-    deal_no_pick_zone = primary_deal_npz(deal_no_pick_zone)  # 将文件处理为可处理的形式
+    deal_no_pick_zone = primary_deal_npz(deal_no_pick_zone_1)  # 将文件处理为可处理的形式
     dt_input = standard_data_input(datatable_input)  #
     no_pick_zone, calculate_no_pick_zone = standard_no_pick_zone(deal_no_pick_zone, alpha)
+    datatable_output = standard_data_output(datatable_output)
 
     def change_zone(self, index):
         """改变函数，为类的内函数，调用即可，index是顺序"""

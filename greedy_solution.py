@@ -1,5 +1,6 @@
 import copy
 import time
+from decimal import Decimal
 
 import numpy as np
 import pandas as pd
@@ -112,7 +113,7 @@ class greedy_solve(object):
 
         return dt_in, use_res, fetch_out, done
 
-    def solve(self):
+    def solve_1(self):
         dt_in = copy.deepcopy(self.dt_input)
         dt_out = copy.deepcopy(self.datatable_output)
         ma_input = []  # [[原料长度，剩余长度,[切割长度]，剩余长度的使用长度]]

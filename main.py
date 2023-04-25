@@ -6,14 +6,14 @@ def main():
     initial = []  # 生成64个初始解，1个贪婪解，63个随机解
 
     GS = greedy_solve()
-    GS_new, t_greedy, team, weld = GS.solve()  #
+    GS_new, t_greedy, team, weld = GS.solve_1()  #
     c = sequence_decode(GS_new[0], GS_new[1], GS.no_pick_zone)  #
 
     if GS.material_length >= GS.product_length:
         # 贪婪解
         count = 0
         while count < GS.greedy_solution_quantity:
-            GS_new, t_greedy, team, weld = GS.solve()  # 新生成的贪婪解
+            GS_new, t_greedy, team, weld = GS.solve_1()  # 新生成的贪婪解
             if GS_new != 10 and GS_new != 111 and GS_new not in initial:
                 initial.append(GS_new)
                 count += 1

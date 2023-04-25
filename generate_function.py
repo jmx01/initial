@@ -32,8 +32,16 @@ def MM_fetchOne(table, MaxOrMin="max", e=0.05, greedy=True):
     if greedy:
         pass
     else:
-        MaxOrMin = np.where(MaxOrMin == "max", np.where(random.random() < e, "min", MaxOrMin),
-                            np.where(random.random() < e, "max", MaxOrMin))
+        if MaxOrMin == "max":
+            if random.random() < e:
+                MaxOrMin = "min"
+            else:
+                MaxOrMin = "max"
+        elif MaxOrMin == "min":
+            if random.random() >= e:
+                MaxOrMin = "min"
+            else:
+                MaxOrMin = "max"
 
     if MaxOrMin == "max":  # 取最大的一根
         address = length.argmax()
