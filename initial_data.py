@@ -5,10 +5,19 @@ import numpy as np
 import openpyxl
 import pandas as pd
 
+file = ["5407055-B1", "7409753", "7409762", "G11-79 7406104-E1"]
 
-def primary_deal_npz(file):
+
+def path(f):
+    di = "./file/" + f + '/data_input.xlsx'
+    do = "./file/" + f + '/data_output.xlsx'
+    zo = "./file/" + f + '/zone.xlsx'
+    return di, do, zo
+
+
+def primary_deal_npz(f):
     """读文件，生成初始禁接区"""
-    wb = openpyxl.load_workbook(file)
+    wb = openpyxl.load_workbook(f)
     sheet = wb.active
     max_columns = sheet.max_column
     column = openpyxl.utils.get_column_letter(max_columns)
@@ -44,6 +53,10 @@ def primary_deal_npz(file):
                                                                                rounding="ROUND_HALF_UP")
     return all_list
 
+
+# def yuan_change(all_list,pick_up):
+#     for i in range(len(all_list)):
+#         if sum()
 
 def alpha_effect(table, al):
     """根据建议离禁焊区距离，扩大禁接区"""
@@ -81,7 +94,7 @@ def alpha_effect(table, al):
 def standard_no_pick_zone(table, al=0):
     """
     :aid 处理禁接区（标准化禁接区）
-    :param al:
+    :param al:建议离焊点距离
     :param table: 输入的原始的禁接矩阵
     :return: 处理好后的标准禁接矩阵
     """
@@ -140,27 +153,24 @@ def seam_num(table):
 
 
 class initial_data(object):
-    greedy_solution_quantity = 1  # 需要的贪婪解初始数，因为是纯贪婪，因此只用一个解
-    random_solution_quantity = 63  # 随机解数
-    over_time = 3600  # 初始解生成时间限制
-    pick_up = 30  # 可放弃的最大材料长度
-    alpha = 0  # 建议离禁焊区的距离
+    greedy_solution_quantity = 1  # 需要的贪婪解初始数
+    algorithm_solution_quantity = 1  # 组批解初始数
+    over_time = 30  # 初始解生成时间限制
+    pick_up = 500  # 可放弃的最大材料长度
+    alpha = 50  # 建议离禁焊区的距离
     e = 0.05  # 概率随机取值
     # datatable_input = 'data_input.xlsx'  # 输入文件的路径
     # datatable_output = 'data_output.xlsx'  # 零件文件路径
     # deal_no_pick_zone = 'zone.xlsx'  # 禁接区文件路径
-    datatable_input_1 = 'data_input-1.xlsx'  # 输入文件的路径
-    datatable_output_1 = 'data_output-1.xlsx'  # 零件文件路径
-    deal_no_pick_zone_1 = 'zone-1.xlsx'  # 禁接区文件路径
+    datatable_input, datatable_output, deal_no_pick_zone = path(file[2])
 
-
-    datatable_input = pd.read_excel(datatable_input_1)  # [编号、数量、长度]  输入材料
-    datatable_output = pd.read_excel(datatable_output_1)  # [编号、数量、长度、焊缝上限]  输出材料
+    datatable_input = pd.read_excel(datatable_input)  # [编号、数量、长度]  输入材料
+    datatable_output = pd.read_excel(datatable_output)  # [编号、数量、长度、焊缝上限]  输出材料
     datatable_output = seam_num(datatable_output)
     material_length = sum(np.array(datatable_input.iloc[:, 1]) * np.array(datatable_input.iloc[:, 2]))  # 输入材料总长度
     product_length = sum(np.array(datatable_output.iloc[:, 1]) * np.array(datatable_output.iloc[:, 2]))  # 输出材料总长度
 
-    deal_no_pick_zone = primary_deal_npz(deal_no_pick_zone_1)  # 将文件处理为可处理的形式
+    deal_no_pick_zone = primary_deal_npz(deal_no_pick_zone)  # 将文件处理为可处理的形式
     dt_input = standard_data_input(datatable_input)  #
     no_pick_zone, calculate_no_pick_zone = standard_no_pick_zone(deal_no_pick_zone, alpha)
     datatable_output = standard_data_output(datatable_output)

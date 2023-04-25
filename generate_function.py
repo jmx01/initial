@@ -97,40 +97,6 @@ def sequence_decode(sequence_M, sequence_P, no_pick_zone):
     change_zone_cal = change_zone_cal[0][1]
 
     return 0
-    # i = 0  # 第几根原料管
-    # j = 0  # 在第几个禁接区
-    # k = [0, 0]  # 覆盖零件管区间
-    # while cal_ma[1] < cut_num[-1] and i <= len(solve)-1:  # 当前原料总长小于零件管总长，且仍有原料管时
-    #     cal_ma[1] = cal_ma[0] + solve[i]
-    #     solve.insert(i, [solve[i], 0, [], 0, 0])
-    #     del solve[i + 1]
-    #
-    #     while cal_ma[1] > change_zone_cal[j][0]:
-    #         j += 1
-    #
-    #
-    #     if j != 0:
-    #         over = cal_ma[1] - change_zone_cal[j - 1][0]  # 超出上一个区域长度
-    #     else:
-    #         over = cal_ma[1]
-    #
-    #     if change_zone_cal[j][1] == 0:  # 判断剩余长度
-    #         if over >= solve[i][0]:
-    #             solve[i][1], solve[i][3] = solve[i][0], solve[i][0]
-    #             solve[i].append(1)
-    #         else:
-    #             solve[i].append(2)
-    #     else:
-    #
-    #     cal_ma[0] = cal_ma[1]
-    #     k[0] = k[1]
-    #     i += 1
-    #
-    # if cal_ma[] > cut_num[-1] and i <= len(solve):
-    #     return solve
-    # else:
-    #     print("序列解生成出错")
-    #     return 0
 
 
 data = initial_data()

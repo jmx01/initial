@@ -1,6 +1,5 @@
 import copy
 import time
-from decimal import Decimal
 
 import numpy as np
 import pandas as pd
@@ -135,6 +134,9 @@ class greedy_solve(object):
                 return 10  # 错误警告，单个初始解超时判别
 
             while fetch_in_res >= fetch_out[2]:  # 当剩余长度大于等于取出长度
+                time_break = time2 - time1
+                if time_break > self.over_time:
+                    return 10  # 错误警告，单个初始解超时判别
                 if len(cut_list) == 0:
                     cut_list.append(fetch_out[2] - ma_input[-1][3])  # 如果是初次切割，减去上根原料剩余长度使用部分。
                 else:
@@ -149,6 +151,9 @@ class greedy_solve(object):
                     break
 
             while fetch_in_res < fetch_out[2]:
+                time_break = time2 - time1
+                if time_break > self.over_time:
+                    return 10  # 错误警告，单个初始解超时判别
                 ma_input[-1][2] = copy.deepcopy(cut_list)  # 把切割长度存下
                 cut_list = []
 
@@ -173,7 +178,7 @@ class greedy_solve(object):
         dt_in = dt_in[dt_in["数量"] > 0]
         dt_in["长度"] = dt_in.index.tolist()
         dt_in.index = range(dt_in.shape[0])
-        dt_in.to_excel("./此次切割剩余原料.xlsx")
+        dt_in.to_excel("./此次切割剩余原料.xlsx")  #
 
         # 下两行用来检测ma_input
         ma = copy.deepcopy(ma_input)
@@ -202,3 +207,8 @@ class greedy_solve(object):
         weld = weld_point_num(ma)
         time3 = time.time()
         return [ma_input, pro_output], time3 - time1, team, weld
+
+    def solve_2(self):
+        dt_in = copy.deepcopy(self.dt_input)
+        dt_out = copy.deepcopy(self.datatable_output)
+        return dt_in
