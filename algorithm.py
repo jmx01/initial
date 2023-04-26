@@ -3,7 +3,6 @@ import random
 import time
 from decimal import Decimal
 
-import numpy as np
 import pandas as pd
 
 from initial_data import initial_data
@@ -43,7 +42,7 @@ def read_excel(dt, con=False):
                  False, [], j])
             matrix_zone.append(add_matrix)
             tmp_output.remove(cpy_output[j])
-        total_num = cal_total_num(product_use, con)  # 有问题
+        num = cal_total_num(product_use, con)  # 有问题
 
 
 
@@ -54,46 +53,40 @@ def read_excel(dt, con=False):
             product_use.append(
                 [cpy_output[x], int(cpy_output[x][1]), [], 0, total_len, matrix_zone[x][0][0], matrix_zone[x][0][1],
                  0, False, [], x])
-        total_num = cal_total_num(product_use, con)
+        num = cal_total_num(product_use, con)
 
-    read_input = pd.read_excel('data_input.xlsx', usecols=[0, 1, 2])  # 原料管以及其分组和编号处理
+    read_input = data.dt_input  # 原料管以及其分组和编号处理
     tmp_input = []
     raw = []
     for x in range(len(read_input)):
         tmp_input.append(read_input.loc[x].tolist())
-    # print(tmp_input)
-    for in_p in tmp_input:
-        l = in_p[2]
-        n = int(in_p[1])
-        k = n // total_num
-        for x in range(k):
-            raw.append([x, l, total_num, l])
-        raw.append([k, l, n - total_num * k, l])
-    # print(raw)
+        k = int(tmp_input[x][1]) // num
+        for j in range(k):
+            raw.append([j, tmp_input[x][2], num, tmp_input[x][2]])
+        raw.append([k, tmp_input[x][2], int(tmp_input[x][1]) - num * k, tmp_input[x][2]])
 
     return matrix_zone, product_use, raw
 
 
-def initialize(data, connection=False):
-    matrix, product0, raw = read_excel(data, connection)
-    product = copy.deepcopy(product0)
-    # print(matrix)
+def initialize(dt, connection=False):
+    matrix0, product0, raw = read_excel(dt, connection)
+    product_use = copy.deepcopy(product0)
     solution = []
-    for i in range(40):
+    for x in range(40):
         random.shuffle(raw)
         tmp = copy.deepcopy(raw)
         solution.append(tmp)
     s = solution[0]
-    s.sort(key=lambda s: s[1], reverse=True)
+    s.sort(key=lambda func: func[1], reverse=True)
     for s in solution:
-        fit = cal_fitness(s, product, matrix)
-        while fit == -1:
+        epoch = cal_fitness(s, product_use, matrix0)
+        while epoch == -1:
             random.shuffle(s)
-            fit = cal_fitness(s, product, matrix)
-        s.append(fit)
-    solution.sort(key=lambda solution: solution[1])
-    group = solution
-    return group, product0, matrix
+            epoch = cal_fitness(s, product_use, matrix0)
+        s.append(epoch)
+    solution.sort(key=lambda func: func[1])
+    group0 = solution
+    return group0, product0, matrix0
 
 
 def process(s_in, p, matrix, raw_length, raw_num):
@@ -165,12 +158,12 @@ def process(s_in, p, matrix, raw_length, raw_num):
 def merge(res_list):  # 合并所有长度相同的余料的函数
     output = copy.deepcopy(res_list)
     ans = []
-    for i in range(len(output)):
-        if not output[i]:
+    for x in range(len(output)):
+        if not output[x]:
             continue
-        for j in range(i + 1, len(output)):
-            if output[i] and output[j] and output[i][1] == output[j][1] and output[i][3] == output[j][3]:
-                output[i][2] += output[j][2]
+        for j in range(x + 1, len(output)):
+            if output[x] and output[j] and output[x][1] == output[j][1] and output[x][3] == output[j][3]:
+                output[x][2] += output[j][2]
                 output[j] = []
     for o in output:
         if o:
@@ -299,6 +292,7 @@ def cross(group0, product0, matrix0):
         parent1 = groups[rand1]
     else:
         parent1 = groups[rand2]
+
     rand3 = random.randint(0, len(groups) - 1)
     rand4 = rand3
     while rand3 == rand4:
@@ -313,14 +307,11 @@ def cross(group0, product0, matrix0):
     par2 = copy.deepcopy(parent2)
     par2.pop()
     children1, children2 = ox(par1, par2)
-    # children = np.where(random.random()>0.5,children1,children2)
-    rand = random.random()
-    if rand > 0.5:
+    if random.random() > 0.5:
         children = children1
     else:
         children = children2
-    # print(children)
-
+    # # print(children)
     rand_replace = random.randint(len(groups) // 2, len(groups) - 1)
     groups.sort(key=lambda gro: gro[-1])
     groups[rand_replace] = children
