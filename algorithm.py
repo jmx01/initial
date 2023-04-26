@@ -7,11 +7,8 @@ from decimal import Decimal
 
 def read_excel(connection=False):
     data = initial_data.initial_data()  # 获得原始数据类，下一步是提取禁接区
-    d = len(data.datatable_output)
 
-    index = []  # 生成决定排序的数字顺序index
-    for i in range(0, d):
-        index.append(i)
+    index = list(range(len(data.datatable_output)))  # 生成决定排序的数字顺序index
     random.shuffle(index)
     # change_zone = data.change_zone(index)   # 根据index的顺序将多个管材的禁接区合并
     # matrix = change_zone[0]
@@ -19,9 +16,8 @@ def read_excel(connection=False):
 
     matrix = []  # 将多个禁接列表装在matrix列表中，构成禁接矩阵。
     product = []  # 对原料管的读取和一些准备工作
-    read_output = pd.read_excel('data_output.xlsx', usecols=[0, 1, 2])  # 产品管
+    read_output = copy.deepcopy(data.datatable_output)
     length = len(read_output)
-    total_len = 0
     tmp_output = []
     for i in range(0, length):
         tmp_output.append(read_output.loc[i].tolist())
@@ -60,7 +56,7 @@ def read_excel(connection=False):
 
 
     else:  # 不进行原料管虚焊操作
-        for i in range(0, d):
+        for i in range(len(data.datatable_output)):
             matrix += [data.change_zone([i])[0]]
         for i in range(0, length):
             total_len = Decimal(str(cpy_output[i][2])).quantize(Decimal("0.01"), rounding="ROUND_HALF_UP")
@@ -108,6 +104,73 @@ def initialize(connection=False):
     solution.sort(key=lambda solution: solution[1])
     group = solution
     return group, product0, matrix
+
+
+def process(s_in, p, matrix, raw_length, raw_num):
+    s = copy.deepcopy(s_in)
+    s[2] = raw_num
+    temp_length = p[3] + raw_length
+    flag = True
+    if temp_length <= p[5]:  # 若安装整段原料管不会进入下个禁接区，则直接将其装上去
+        p[3] = temp_length
+        p[2].append(s)
+        p[7] += 1
+    elif temp_length >= p[6]:
+        if temp_length >= p[4]:  # 超过全长
+            used_length = p[4] - p[3]
+            p[3] = p[4]
+            temp = copy.deepcopy(s)
+            temp[2] = raw_num
+            temp[1] = used_length
+            p[2].append(temp)
+            p[7] += 1
+            p[8] = True
+            temp2 = copy.deepcopy(temp)
+            temp2[1] = s[1] - used_length
+            temp2[2] = raw_num
+            if temp2[1] >= 500:
+                p[9].append(temp2)
+        else:  # 未超过全长
+            p[3] = temp_length
+            p[7] += 1
+            for m in matrix:
+                if m[0] < temp_length and m[1] > temp_length:
+                    p[5], p[6] = m[0], m[1]
+                    used_length = p[5] - p[3] + raw_length
+                    p[3] = p[5]
+                    temp = copy.deepcopy(s)
+                    temp[2] = raw_num
+                    temp[1] = used_length
+                    p[2].append(temp)
+                    temp2 = copy.deepcopy(temp)
+                    temp2[1] = s[1] - used_length
+                    temp2[2] = raw_num
+                    if temp2[1] >= 500:
+                        p[9].append(temp2)
+                    break
+                if m[0] > temp_length:
+                    p[5], p[6] = m[0], m[1]
+                    p[2].append(s)
+                    break
+                if matrix.index(m) == len(matrix) - 1:
+                    p[5], p[6] = p[4], p[4]
+                    p[2].append(s)
+                    break
+
+    else:
+        if p[5] == p[3]:
+            return p
+        p[7] += 1
+        used_length = p[5] - p[3]
+        p[3] = p[5]
+        temp = copy.deepcopy(s)
+        temp[2] = raw_num
+        temp[1] = used_length
+        p[2].append(temp)
+        temp2 = copy.deepcopy(temp)
+        temp2[1] = s[1] - used_length
+        p[9].append(temp2)
+    return p
 
 
 def merge(res_list):  # 合并所有长度相同的余料的函数
@@ -185,73 +248,6 @@ def cal_fitness(solution_in, product, matrix, show_composition=False):
         return fitness, product
     else:
         return fitness
-
-
-def process(s_in, p, matrix, raw_length, raw_num):
-    s = copy.deepcopy(s_in)
-    s[2] = raw_num
-    temp_length = p[3] + raw_length
-    flag = True
-    if temp_length <= p[5]:  # 若安装整段原料管不会进入下个禁接区，则直接将其装上去
-        p[3] = temp_length
-        p[2].append(s)
-        p[7] += 1
-    elif temp_length >= p[6]:
-        if temp_length >= p[4]:  # 超过全长
-            used_length = p[4] - p[3]
-            p[3] = p[4]
-            temp = copy.deepcopy(s)
-            temp[2] = raw_num
-            temp[1] = used_length
-            p[2].append(temp)
-            p[7] += 1
-            p[8] = True
-            temp2 = copy.deepcopy(temp)
-            temp2[1] = s[1] - used_length
-            temp2[2] = raw_num
-            if temp2[1] >= 500:
-                p[9].append(temp2)
-        else:  # 未超过全长
-            p[3] = temp_length
-            p[7] += 1
-            for m in matrix:
-                if m[0] < temp_length and m[1] > temp_length:
-                    p[5], p[6] = m[0], m[1]
-                    used_length = p[5] - p[3] + raw_length
-                    p[3] = p[5]
-                    temp = copy.deepcopy(s)
-                    temp[2] = raw_num
-                    temp[1] = used_length
-                    p[2].append(temp)
-                    temp2 = copy.deepcopy(temp)
-                    temp2[1] = s[1] - used_length
-                    temp2[2] = raw_num
-                    if temp2[1] >= 500:
-                        p[9].append(temp2)
-                    break
-                if m[0] > temp_length:
-                    p[5], p[6] = m[0], m[1]
-                    p[2].append(s)
-                    break
-                if matrix.index(m) == len(matrix) - 1:
-                    p[5], p[6] = p[4], p[4]
-                    p[2].append(s)
-                    break
-
-    else:
-        if p[5] == p[3]:
-            return p
-        p[7] += 1
-        used_length = p[5] - p[3]
-        p[3] = p[5]
-        temp = copy.deepcopy(s)
-        temp[2] = raw_num
-        temp[1] = used_length
-        p[2].append(temp)
-        temp2 = copy.deepcopy(temp)
-        temp2[1] = s[1] - used_length
-        p[9].append(temp2)
-    return p
 
 
 def ox(solution1, solution2):
