@@ -159,6 +159,8 @@ class initial_data(object):
     pick_up = 500  # 可放弃的最大材料长度
     alpha = 50  # 建议离禁焊区的距离
     e = 0.05  # 概率随机取值
+    num = 1000  # 迭代次数
+    connection = False  # 是否虚焊
     # datatable_input = 'data_input.xlsx'  # 输入文件的路径
     # datatable_output = 'data_output.xlsx'  # 零件文件路径
     # deal_no_pick_zone = 'zone.xlsx'  # 禁接区文件路径
