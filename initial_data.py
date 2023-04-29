@@ -54,9 +54,28 @@ def primary_deal_npz(f):
     return all_list
 
 
-# def yuan_change(all_list,pick_up):
-#     for i in range(len(all_list)):
-#         if sum()
+def yuan_change(all_list, pick_up):
+    new_list = copy.deepcopy(all_list)
+    for i in range(len(new_list)):
+        length = 0
+        for j in range(len(new_list[i][1])):
+            length += new_list[i][1][j][0]
+        if length <= pick_up:
+            new_list[i][1] = [length, 1]
+        else:
+            res = length - pick_up
+            for j in range(len(new_list[i][1])):
+                if new_list[i][1][j][0] < res:
+                    res -= new_list[i][1][j][0]
+                elif new_list[i][1][j][0] == res:
+                    del new_list[i][1][j + 1:]
+                    new_list[i][1].insert(j + 1, [pick_up, 1])
+                elif new_list[i][1][j][0] > res:
+                    new_list[i][1].insert(j, [res, new_list[i][1][j][1]])
+                    del new_list[i][1][j + 1:]
+                    new_list[i][1].insert(j + 1, [pick_up, 1])
+    return new_list
+
 
 def alpha_effect(table, al):
     """根据建议离禁焊区距离，扩大禁接区"""
@@ -156,15 +175,16 @@ class initial_data(object):
     greedy_solution_quantity = 1  # 需要的贪婪解初始数
     algorithm_solution_quantity = 1  # 组批解初始数
     over_time = 30  # 初始解生成时间限制
-    pick_up = 500  # 可放弃的最大材料长度
+    pick_up = 500
+    pick_up = Decimal(pick_up).quantize(Decimal("0.01"), rounding="ROUND_HALF_UP")  # 可放弃的最大材料长度
     alpha = 50  # 建议离禁焊区的距离
     e = 0.05  # 概率随机取值
     num = 1000  # 迭代次数
     connection = False  # 是否虚焊
+    datatable_input, datatable_output, deal_no_pick_zone = path(file[2])
     # datatable_input = 'data_input.xlsx'  # 输入文件的路径
     # datatable_output = 'data_output.xlsx'  # 零件文件路径
     # deal_no_pick_zone = 'zone.xlsx'  # 禁接区文件路径
-    datatable_input, datatable_output, deal_no_pick_zone = path(file[2])
 
     datatable_input = pd.read_excel(datatable_input)  # [编号、数量、长度]  输入材料
     datatable_output = pd.read_excel(datatable_output)  # [编号、数量、长度、焊缝上限]  输出材料
@@ -173,8 +193,10 @@ class initial_data(object):
     product_length = sum(np.array(datatable_output.iloc[:, 1]) * np.array(datatable_output.iloc[:, 2]))  # 输出材料总长度
 
     deal_no_pick_zone = primary_deal_npz(deal_no_pick_zone)  # 将文件处理为可处理的形式
+    new_pick_zone = yuan_change(deal_no_pick_zone, pick_up)  # 给袁浩用的新禁接区
     dt_input = standard_data_input(datatable_input)  #
     no_pick_zone, calculate_no_pick_zone = standard_no_pick_zone(deal_no_pick_zone, alpha)
+    new_no_pick_zone, new_calculate_no_pick_zone = standard_no_pick_zone(new_pick_zone, alpha)
     datatable_output = standard_data_output(datatable_output)
 
     def change_zone(self, index):
