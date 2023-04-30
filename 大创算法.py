@@ -25,16 +25,16 @@ def ox(solution1, solution2):
     swap = [s2_head + s2_tail, s1_head + s1_tail]
 
     c_new = []
-    for x in range(2):
+    for ix in range(2):
         c_swap = []
-        while swap[x]:
-            tmp = swap[x].pop()
-            if tmp not in copy_mid[x]:
+        while swap[ix]:
+            tmp = swap[ix].pop()
+            if tmp not in copy_mid[ix]:
                 c_swap.append(tmp)
-        for c in copy_mid[1 - x]:
-            if c not in copy_mid[x]:
+        for c in copy_mid[1 - ix]:
+            if c not in copy_mid[ix]:
                 c_swap.append(c)
-        c_new.append(c_swap[len(solution1) - max_rand - 1:] + copy_mid[x] + c_swap[:len(solution1) - max_rand - 1])
+        c_new.append(c_swap[len(solution1) - max_rand - 1:] + copy_mid[ix] + c_swap[:len(solution1) - max_rand - 1])
 
     return c_new
 
@@ -73,8 +73,7 @@ def cal_fitness(solution_in, product, matrix):
             if p[8]:  # 若该产品管已完成，则直接研究下一根产品管
                 continue
             if p[5] - data.pick_up < p[3] <= p[5] and p[3] + raw_length < p[6] and p[4] != p[6] or p[4] == p[6] and p[
-                3] == p[5] \
-                    and p[3] + raw_length < p[6]:
+                3] == p[5] and p[3] + raw_length < p[6]:
                 # 若目前的原料管受到禁接区约束限制，无法添加到当前研究的产品管是，则直接研究下一根产品管
                 continue
             if raw_num >= p[1]:  # 若原料管数量大于当前研究的产品管组，则可在原料管不变的条件下继续到下一根产品管
@@ -118,7 +117,7 @@ def cal_fitness(solution_in, product, matrix):
                     res_list.append(r)
             # res_list = merge(res_list)     # 最好先不使用merge函数
             add_list = unused_list + res_list
-            add_list.sort(key=lambda add_list: int(add_list[1] * add_list[2]),
+            add_list.sort(key=lambda func: int(func[1] * func[2]),
                           reverse=True)  # 将unused和res列表中所有元素放到一起并降序排列，重新放入解列表中继续运转
             solution += add_list
             if flag:
@@ -199,23 +198,21 @@ def process(s_in, p, matrix, raw_length, raw_num):
 
 
 def read_excel(data0):
-    index = list(range(len(data0.datatable_output)))
-    random.shuffle(index)
-
-    matrix = []  # 将多个禁接列表装在matrix列表中，构成禁接矩阵。
-    product = []  # 对原料管的读取和一些准备工作
     read_output = data0.datatable_output
-    tmp_output = []
+    matrix0 = []  # 将多个禁接列表装在matrix列表中，构成禁接矩阵。
+    product0 = []  # 对原料管的读取和一些准备工作
+    cpy_output = []
     for i in range(len(read_output)):
-        tmp_output.append(read_output.loc[i].tolist())
-    cpy_output = copy.deepcopy(tmp_output)
+        cpy_output.append(read_output.loc[i].tolist())
 
     if data0.connection:  # 进行原料管虚焊操作
+        index = list(range(len(data0.datatable_output)))
+        random.shuffle(index)
+        tmp_output = []
         for i in range(len(index)):
-            tmp_output[i] = cpy_output[index[i]][:]
-            tmp_output[i].append(index[i])
+            tmp_output.append([*copy.deepcopy(cpy_output[index[i]]), index[i]])
         cpy_output = copy.deepcopy(tmp_output)
-        cpy_output.sort(key=lambda cpy_output: cpy_output[1])
+        cpy_output.sort(key=lambda func: func[1])
         for j in range(len(tmp_output) - 1):
             k = j
             add_matrix = data0.change_zone(index)[0]
@@ -231,60 +228,55 @@ def read_excel(data0):
             total_len = 0
             for tmp in tmp_output:
                 total_len += Decimal(str(tmp[2])).quantize(Decimal("0.01"), rounding="ROUND_HALF_UP")
-            product += [
+            product0 += [
                 [copy.deepcopy(tmp_output), product_num, [], 0, total_len, add_matrix[0][0], add_matrix[0][1], 0, False,
                  [], k]]
-            matrix.append(add_matrix)
+            matrix0.append(add_matrix)
             tmp_output.remove(cpy_output[j - 1])
-        total_num = sum([p[1] for p in product])
 
     else:  # 不进行原料管虚焊操作
         for i in range(len(data0.datatable_output)):
-            matrix += [data0.change_zone([i])[0]]
+            matrix0 += [data0.change_zone([i])[0]]
         for i in range(len(read_output)):
             total_len = Decimal(str(cpy_output[i][2])).quantize(Decimal("0.01"), rounding="ROUND_HALF_UP")
-            product_num = int(tmp_output[i][1])
-            product += [
-                [[cpy_output[i]], product_num, [], 0, total_len, matrix[i][0][0], matrix[i][0][1], 0, False, [], i]]
-        total_num = sum([p[0][0][1] for p in product])
+            product_num = int(cpy_output[i][1])
+            product0 += [
+                [[cpy_output[i]], product_num, [], 0, total_len, matrix0[i][0][0], matrix0[i][0][1], 0, False, [], i]]
 
+    total = sum([p[1] for p in product0])
     read_input = data0.dt_input  # 原料管以及其分组和编号处理
     tmp_input = []
     raw = []
     for i in range(len(read_input)):
         tmp_input.append(read_input.loc[i].tolist())
-    # print(tmp_input)
     for in_p in tmp_input:
         n = int(in_p[1])
-        k = n // total_num
+        k = n // total
         part_sum = 1
         for i in range(k):
-            raw.append([[part_sum, part_sum + total_num - 1], in_p[2], total_num, in_p[2]])  # [编号开头（取得到），编号末尾（取不到）]
-            part_sum += total_num
-        raw.append([[part_sum, part_sum + n - 1 - total_num * k], in_p[2], n - total_num * k, in_p[2]])
-    return matrix, product, raw
+            raw.append([[part_sum, part_sum + total - 1], in_p[2], total, in_p[2]])  # [编号开头（取得到），编号末尾（取不到）]
+            part_sum += total
+        raw.append([[part_sum, part_sum + n - 1 - total * k], in_p[2], n - total * k, in_p[2]])
+    return matrix0, product0, raw
 
 
-def initialize(data):
-    matrix, product0, raw = read_excel(data)
-    product = copy.deepcopy(product0)
+def initialize(data0):
+    matrix0, product0, raw = read_excel(data0)
+    product0 = copy.deepcopy(product0)
+    groups = []
 
-    solution = []
-    for i in range(40):
+    for i in range(data0.algorithm_solution_quantity):
         random.shuffle(raw)
-        tmp = copy.deepcopy(raw)
-        solution.append(tmp)
-    s = solution[0]
-    s.sort(key=lambda s: s[1], reverse=True)
-    for s in solution:
-        fit = cal_fitness(s, product, matrix)
-        while fit == -1:
+        groups.append(copy.deepcopy(raw))
+    groups[0].sort(key=lambda func: func[1], reverse=True)
+    for s in groups:
+        fitness = cal_fitness(s, product0, matrix0)
+        while fitness == -1:
             random.shuffle(s)
-            fit = cal_fitness(s, product, matrix)
-        s.append(fit)
-    solution.sort(key=lambda solution: solution[1])
-    group = solution
-    return group, product0, matrix
+            fitness = cal_fitness(s, product0, matrix0)
+        s.append(fitness)
+    groups.sort(key=lambda func: func[1])
+    return groups, product0, matrix0
 
 
 def cross(groups, product0, matrix0):
@@ -316,7 +308,7 @@ def cross(groups, product0, matrix0):
 
 
 def cal_total_num(product_in):
-    num = sum([p[0][0][1] for p in product_in])
+    num = sum([p[1] for p in product_in])
     return num
 
 
@@ -331,7 +323,7 @@ def display_raw(finished_product):  # 用于记录原料管切割情况
         raws = fp[2]
         for r in raws:
             all_raw_part.append(r)
-    all_raw_part.sort(key=lambda all_raw_part: all_raw_part[3])
+    all_raw_part.sort(key=lambda func: func[3])
     return all_raw_part
 
 
@@ -339,7 +331,7 @@ if __name__ == '__main__':
     start = time.time()
     data = initial_data()
     group, product, matrix = initialize(data)
-    total_num = sum([p[0][0][1] for p in product])
+    total_num = sum([p[1] for p in product])
     for x in range(data.num):
         group = cross(group, product, matrix)
     print(product)

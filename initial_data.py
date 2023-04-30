@@ -177,7 +177,7 @@ def seam_num(table):
 
 class initial_data(object):
     greedy_solution_quantity = 1  # 需要的贪婪解初始数
-    algorithm_solution_quantity = 1  # 组批解初始数
+    algorithm_solution_quantity = 40  # 组批解数
     over_time = 30  # 初始解生成时间限制
     pick_up = 500
     pick_up = Decimal(pick_up).quantize(Decimal("0.01"), rounding="ROUND_HALF_UP")  # 可放弃的最大材料长度
