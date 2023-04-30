@@ -2,27 +2,17 @@ import copy
 import random
 from decimal import Decimal
 
-import pandas as pd
+import numpy as np
 
 from initial_data import initial_data
 
 
 def ox(solution1, solution2):
-    c1_swap = []
-    c2_swap = []
+    # 生成两个不一样的值
+    rand = random.sample(range(0, len(solution1) - 1), 2)
+    min_rand, max_rand = min(rand), max(rand)
 
-    while True:
-        rand1 = random.randint(0, len(solution1) - 1)
-        rand2 = random.randint(0, len(solution1) - 1)
-        min_rand = min(rand1, rand2)
-        max_rand = max(rand1, rand2)
-        if min_rand < max_rand:
-            break
-    # print(min_rand)
-    # print(max_rand)
-
-    copy1 = solution1[min_rand:max_rand + 1]
-    copy2 = solution2[min_rand:max_rand + 1]
+    copy_mid = [solution1[min_rand:max_rand + 1], solution2[min_rand:max_rand + 1]]
     s1_head = solution1[:min_rand]
     s1_head.reverse()
     s1_tail = solution1[max_rand + 1:]
@@ -31,30 +21,24 @@ def ox(solution1, solution2):
     s2_head.reverse()
     s2_tail = solution2[max_rand + 1:]
     s2_tail.reverse()
-    swap2 = s1_head + s1_tail  # 编号没错
-    swap1 = s2_head + s2_tail  # 编号没错
+    swap = [s2_head + s2_tail, s1_head + s1_tail]
 
-    while swap1:
-        tmp = swap1.pop()
-        if tmp not in copy1:
-            c1_swap.append(tmp)
-    for c in copy2:
-        if c not in copy1:
-            c1_swap.append(c)
-    c1 = c1_swap[len(solution1) - max_rand - 1:] + copy1 + c1_swap[:len(solution1) - max_rand - 1]
+    c_new = []
+    for x in range(2):
+        c_swap = []
+        while swap[x]:
+            tmp = swap[x].pop()
+            if tmp not in copy_mid[x]:
+                c_swap.append(tmp)
+        for c in copy_mid[1 - x]:
+            if c not in copy_mid[x]:
+                c_swap.append(c)
+        c_new.append(c_swap[len(solution1) - max_rand - 1:] + copy_mid[x] + c_swap[:len(solution1) - max_rand - 1])
 
-    while swap2:
-        tmp = swap2.pop()
-        if tmp not in copy2:
-            c2_swap.append(tmp)
-    for c in copy1:
-        if c not in copy2:
-            c2_swap.append(c)
-    c2 = c2_swap[len(solution2) - max_rand - 1:] + copy2 + c2_swap[:len(solution2) - max_rand - 1]
-
-    return c1, c2
+    return c_new
 
 
+## 这个函数和standard_data_input函数可能相似
 def merge(res_list):  # 合并所有长度相同的余料的函数
     output = copy.deepcopy(res_list)
     ans = []
@@ -87,8 +71,8 @@ def cal_fitness(solution_in, product, matrix, show_composition=False):
             s_in = copy.deepcopy(s)
             if p[8]:  # 若该产品管已完成，则直接研究下一根产品管
                 continue
-            if p[5] - 500 < p[3] <= p[5] and p[3] + raw_length < p[6] and p[4] != p[6] or p[4] == p[6] and p[3] == p[
-                5] and p[3] + raw_length < p[6]:
+            if p[5] - 500 < p[3] <= p[5] and p[3] + raw_length < p[6] and p[4] != p[6] or p[4] == p[6] and p[3] == p[5] \
+                    and p[3] + raw_length < p[6]:
                 # 若目前的原料管受到禁接区约束限制，无法添加到当前研究的产品管是，则直接研究下一根产品管
                 continue
             if raw_num >= p[1]:  # 若原料管数量大于当前研究的产品管组，则可在原料管不变的条件下继续到下一根产品管
@@ -154,7 +138,6 @@ def process(s_in, p, matrix, raw_length, raw_num):
     s = copy.deepcopy(s_in)
     s[2] = raw_num
     temp_length = p[3] + raw_length
-    flag = True
     if temp_length <= p[5]:  # 若安装整段原料管不会进入下个禁接区，则直接将其装上去
         p[3] = temp_length
         p[2].append(s)
@@ -178,7 +161,7 @@ def process(s_in, p, matrix, raw_length, raw_num):
             p[3] = temp_length
             p[7] += 1
             for m in matrix:
-                if m[0] < temp_length and m[1] > temp_length:  # 落在禁接区之内
+                if m[0] < temp_length < m[1]:  # 落在禁接区之内
                     p[5], p[6] = m[0], m[1]
                     used_length = p[5] - p[3] + raw_length
                     p[3] = p[5]
@@ -218,43 +201,33 @@ def process(s_in, p, matrix, raw_length, raw_num):
     return p
 
 
-def read_excel(data, connection=False):
-    d = len(data.datatable_output)
-
-    index = []  # 生成决定排序的数字顺序index
-    for i in range(0, d):
-        index.append(i)
+def read_excel(data0):
+    index = list(range(len(data0.datatable_output)))
     random.shuffle(index)
-    # change_zone = data.change_zone(index)   # 根据index的顺序将多个管材的禁接区合并
-    # matrix = change_zone[0]
-    # print(matrix)
 
     matrix = []  # 将多个禁接列表装在matrix列表中，构成禁接矩阵。
     product = []  # 对原料管的读取和一些准备工作
-    read_output = data.datatable_output
-    length = len(read_output)
-    total_len = 0
+    read_output = data0.datatable_output
     tmp_output = []
-    for i in range(0, length):
+    for i in range(len(read_output)):
         tmp_output.append(read_output.loc[i].tolist())
         cpy_output = copy.deepcopy(tmp_output)
 
-    if connection:  # 进行原料管虚焊操作
+    if data0.connection:  # 进行原料管虚焊操作
         for i in range(len(index)):
             tmp_output[i] = cpy_output[index[i]][:]
             tmp_output[i].append(index[i])
         cpy_output = copy.deepcopy(tmp_output)
         cpy_output.sort(key=lambda cpy_output: cpy_output[1])
-        l = len(tmp_output)
-        for j in range(1, l):
-            k = j - 1
-            add_matrix = data.change_zone(index)[0]
-            removed_i = cpy_output[j - 1][-1]
+        for j in range(len(tmp_output) - 1):
+            k = j
+            add_matrix = data0.change_zone(index)[0]
+            removed_i = cpy_output[j][-1]
             index.remove(removed_i)
-            if j == 1:
-                product_num = cpy_output[j - 1][1]
+            if j == 0:
+                product_num = cpy_output[j][1]
             else:
-                product_num = cpy_output[j][1] - cpy_output[j - 1][1]
+                product_num = cpy_output[j + 1][1] - cpy_output[j][1]
             if product_num == 0:
                 k -= 1
                 continue
@@ -272,20 +245,19 @@ def read_excel(data, connection=False):
 
 
     else:  # 不进行原料管虚焊操作
-        for i in range(0, d):
-            matrix += [data.change_zone([i])[0]]
-        for i in range(0, length):
+        for i in range(len(data0.datatable_output)):
+            matrix += [data0.change_zone([i])[0]]
+        for i in range(len(read_output)):
             total_len = Decimal(str(cpy_output[i][2])).quantize(Decimal("0.01"), rounding="ROUND_HALF_UP")
             product_num = int(tmp_output[i][1])
             product += [
                 [[cpy_output[i]], product_num, [], 0, total_len, matrix[i][0][0], matrix[i][0][1], 0, False, [], i]]
-        total_num = cal_total_num(product)
+        total_num = sum([p[0][0][1] for p in product])
 
-    read_input = data.dt_input  # 原料管以及其分组和编号处理
-    length = len(read_input)
+    read_input = data0.dt_input  # 原料管以及其分组和编号处理
     tmp_input = []
     raw = []
-    for i in range(0, length):
+    for i in range(len(read_input)):
         tmp_input.append(read_input.loc[i].tolist())
     # print(tmp_input)
     for in_p in tmp_input:
@@ -302,10 +274,10 @@ def read_excel(data, connection=False):
     return matrix, product, raw
 
 
-def initialize(data, connection=False):
-    matrix, product0, raw = read_excel(data, connection)
+def initialize(data):
+    matrix, product0, raw = read_excel(data)
     product = copy.deepcopy(product0)
-    # print(matrix)
+
     solution = []
     for i in range(40):
         random.shuffle(raw)
@@ -324,54 +296,36 @@ def initialize(data, connection=False):
     return group, product0, matrix
 
 
-def cross(group, product0, matrix):
-    product = copy.deepcopy(product0)
-    groups = copy.deepcopy(group)
-
+def cross(groups, product0, matrix0):
     loc_fitness = len(groups[0]) - 1
-    rand1 = random.randint(0, len(groups) - 1)
-    rand2 = rand1
-    while rand2 == rand1:
-        rand2 = random.randint(0, len(groups) - 1)
-    if groups[rand1][loc_fitness] < groups[rand2][loc_fitness]:
-        parent1 = groups[rand1]
-    else:
-        parent1 = groups[rand2]
-    rand3 = random.randint(0, len(groups) - 1)
-    rand4 = rand3
-    while rand3 == rand4:
-        rand4 = random.randint(0, len(groups) - 1)
-    if groups[rand3][loc_fitness] < groups[rand4][loc_fitness]:
-        parent2 = groups[rand3]
-    else:
-        parent2 = groups[rand4]
+
+    rand = [random.sample((0, len(groups) - 1), 2), random.sample((0, len(groups) - 1), 2)]
+    index1 = np.where(groups[rand[0][0]][loc_fitness] < groups[rand[0][1]][loc_fitness], rand[0][0], rand[0][1])
+    index2 = np.where(groups[rand[1][0]][loc_fitness] < groups[rand[1][1]][loc_fitness], rand[1][0], rand[1][1])
+    parent1 = groups[index1]
+    parent2 = groups[index2]
 
     par1 = copy.deepcopy(parent1)
     par1.pop()
     par2 = copy.deepcopy(parent2)
     par2.pop()
-    children1, children2 = ox(par1, par2)
-    rand = random.random()
-    if rand > 0.5:
-        children = children1
-    else:
-        children = children2
-    # print(children)
+    children = ox(par1, par2)
+
+    index = np.where(random.random() > 0.5, 0, 1)
+    children = children[index]
 
     rand_replace = random.randint(len(groups) // 2, len(groups) - 1)
-    groups.sort(key=lambda groups: groups[loc_fitness])
+    groups.sort(key=lambda func: func[loc_fitness])
     groups[rand_replace] = children
-    f_c = cal_fitness(children, product, matrix)
+    f_c = cal_fitness(children, product0, matrix0)
     groups[rand_replace].append(f_c)
-    groups.sort(key=lambda groups: groups[loc_fitness])
+    groups.sort(key=lambda func: func[loc_fitness])
 
     return groups
 
 
 def cal_total_num(product_in):
-    num = 0
-    for p in product_in:
-        num += p[0][0][1]
+    num = sum([p[0][0][1] for p in product_in])
     return num
 
 
@@ -392,8 +346,8 @@ def display_raw(finished_product):  # 用于记录原料管切割情况
 
 if __name__ == '__main__':
     data = initial_data()
-    group, product, matrix = initialize(data, connection=data.connection)
-    total_num = cal_total_num(product)
+    group, product, matrix = initialize(data)
+    total_num = sum([p[0][0][1] for p in product])
     for i in range(data.num):
         group = cross(group, product, matrix)
     print(product)
@@ -402,7 +356,7 @@ if __name__ == '__main__':
     opt = group[0]
     print(opt)
     opt.pop()
-    fit, pro = cal_fitness(opt, product, matrix, show_composition=True)
+    fit, pro = cal_fitness(opt, product, matrix, show_composition=data.show_composition)
     print(fit - total_num)
     for p in pro:
         print(p)
