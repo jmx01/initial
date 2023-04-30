@@ -70,10 +70,12 @@ def yuan_change(all_list, pick_up):
                 elif new_list[i][1][j][0] == res:
                     del new_list[i][1][j + 1:]
                     new_list[i][1].insert(j + 1, [pick_up, 1])
+                    break
                 elif new_list[i][1][j][0] > res:
                     new_list[i][1].insert(j, [res, new_list[i][1][j][1]])
                     del new_list[i][1][j + 1:]
                     new_list[i][1].insert(j + 1, [pick_up, 1])
+                    break
     return new_list
 
 
@@ -99,10 +101,12 @@ def alpha_effect(table, al):
             if table[i][1][j][0] < 0:
                 if j != 0:
                     table[i][1][j][0] = table[i][1][j][0] + table[i][1][j + 1][0] + table[i][1][j - 1][0]
+                    table[i][1][j][1] = 1
                     del table[i][1][j + 1], table[i][1][j - 1]
                     j -= 1
                 else:
                     table[i][1][j][0] = table[i][1][j][0] + table[i][1][j + 1][0]
+                    table[i][1][j][1] = 1
                     del table[i][1][j + 1]
             else:
                 j += 1
@@ -181,7 +185,8 @@ class initial_data(object):
     e = 0.05  # 概率随机取值
     num = 1000  # 迭代次数
     connection = False  # 是否虚焊
-    datatable_input, datatable_output, deal_no_pick_zone = path(file[2])
+    show_composition = True
+    datatable_input, datatable_output, deal_no_pick_zone = path(file[3])
     # datatable_input = 'data_input.xlsx'  # 输入文件的路径
     # datatable_output = 'data_output.xlsx'  # 零件文件路径
     # deal_no_pick_zone = 'zone.xlsx'  # 禁接区文件路径
@@ -203,7 +208,7 @@ class initial_data(object):
         """改变函数，为类的内函数，调用即可，index是顺序"""
         change_zone = ["change", []]
         for i in range(len(index)):
-            change_zone[1].extend(self.deal_no_pick_zone[index[i]][1])
+            change_zone[1].extend(self.new_pick_zone[index[i]][1])
         change_zone = [change_zone]
         change_zone, change_zone_cal = standard_no_pick_zone(change_zone, self.alpha)
         new_change_zone = []
