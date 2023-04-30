@@ -186,7 +186,7 @@ class initial_data(object):
     num = 1000  # 迭代次数
     connection = False  # 是否虚焊
     flag_yuan = False  # 是否使用袁浩的禁接区
-    show_composition = True
+    show_composition = True  # 是否展示pro
     datatable_input, datatable_output, deal_no_pick_zone = path(file[2])
     # datatable_input = 'data_input.xlsx'  # 输入文件的路径
     # datatable_output = 'data_output.xlsx'  # 零件文件路径
@@ -203,6 +203,7 @@ class initial_data(object):
         new_pick_zone = yuan_change(deal_no_pick_zone, pick_up)  # 给袁浩用的新禁接区
     else:
         new_pick_zone = copy.deepcopy(deal_no_pick_zone)  # 老禁接区
+
     dt_input = standard_data_input(datatable_input)  #
     no_pick_zone, calculate_no_pick_zone = standard_no_pick_zone(deal_no_pick_zone, alpha)
     new_no_pick_zone, new_calculate_no_pick_zone = standard_no_pick_zone(new_pick_zone, alpha)

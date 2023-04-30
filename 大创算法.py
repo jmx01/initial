@@ -1,5 +1,6 @@
 import copy
 import random
+import time
 from decimal import Decimal
 
 import numpy as np
@@ -55,7 +56,7 @@ def merge(res_list):  # 合并所有长度相同的余料的函数
     return ans
 
 
-def cal_fitness(solution_in, product, matrix, show_composition=False):
+def cal_fitness(solution_in, product, matrix):
     fitness = 0
     solution = copy.deepcopy(solution_in)
     unused_list = []
@@ -71,7 +72,8 @@ def cal_fitness(solution_in, product, matrix, show_composition=False):
             s_in = copy.deepcopy(s)
             if p[8]:  # 若该产品管已完成，则直接研究下一根产品管
                 continue
-            if p[5] - 500 < p[3] <= p[5] and p[3] + raw_length < p[6] and p[4] != p[6] or p[4] == p[6] and p[3] == p[5] \
+            if p[5] - data.pick_up < p[3] <= p[5] and p[3] + raw_length < p[6] and p[4] != p[6] or p[4] == p[6] and p[
+                3] == p[5] \
                     and p[3] + raw_length < p[6]:
                 # 若目前的原料管受到禁接区约束限制，无法添加到当前研究的产品管是，则直接研究下一根产品管
                 continue
@@ -98,7 +100,7 @@ def cal_fitness(solution_in, product, matrix, show_composition=False):
                 product.insert(loc + 1, copy_p)
                 p[1] = temp
                 raw_num = 0
-            p = process(s_in, p, matrix[p[-1]], raw_length, temp)  # 具体的原料管安装到产品管的步骤
+            process(s_in, p, matrix[p[-1]], raw_length, temp)  # 具体的原料管安装到产品管的步骤
         if raw_num > 0:  # 若原料管有尚未使用完的，则放入unused list之中备用
             s_copy = copy.deepcopy(s)
             s_copy[2] = raw_num
@@ -127,11 +129,7 @@ def cal_fitness(solution_in, product, matrix, show_composition=False):
         if not p[3] == p[4]:
             fitness = -1
             break
-
-    if show_composition:
-        return fitness, product
-    else:
-        return fitness
+    return fitness, product
 
 
 def process(s_in, p, matrix, raw_length, raw_num):
@@ -155,7 +153,7 @@ def process(s_in, p, matrix, raw_length, raw_num):
             temp2 = copy.deepcopy(temp)
             temp2[1] = s[1] - used_length
             temp2[2] = raw_num
-            if temp2[1] >= 500:  # 余料小于指定长度（500）的不要
+            if temp2[1] >= data.pick_up:  # 余料小于指定长度（data.pick_up）的不要
                 p[9].append(temp2)
         else:  # 未超过全长
             p[3] = temp_length
@@ -172,7 +170,7 @@ def process(s_in, p, matrix, raw_length, raw_num):
                     temp2 = copy.deepcopy(temp)
                     temp2[1] = s[1] - used_length
                     temp2[2] = raw_num
-                    if temp2[1] >= 500:  # 余料小于指定长度（500）的不要
+                    if temp2[1] >= data.pick_up:  # 余料小于指定长度（data.pick_up）的不要
                         p[9].append(temp2)
                     break
                 if m[0] >= temp_length:  # 在禁接区之前
@@ -196,9 +194,8 @@ def process(s_in, p, matrix, raw_length, raw_num):
         p[2].append(temp)
         temp2 = copy.deepcopy(temp)
         temp2[1] = s[1] - used_length
-        if temp2[1] >= 500:  # 余料小于指定长度（500）的不要
+        if temp2[1] >= data.pick_up:  # 余料小于指定长度（data.pick_up）的不要
             p[9].append(temp2)
-    return p
 
 
 def read_excel(data0):
@@ -211,7 +208,7 @@ def read_excel(data0):
     tmp_output = []
     for i in range(len(read_output)):
         tmp_output.append(read_output.loc[i].tolist())
-        cpy_output = copy.deepcopy(tmp_output)
+    cpy_output = copy.deepcopy(tmp_output)
 
     if data0.connection:  # 进行原料管虚焊操作
         for i in range(len(index)):
@@ -239,10 +236,7 @@ def read_excel(data0):
                  [], k]]
             matrix.append(add_matrix)
             tmp_output.remove(cpy_output[j - 1])
-        total_num = 0
-        for p in product:
-            total_num += p[1]
-
+        total_num = sum([p[1] for p in product])
 
     else:  # 不进行原料管虚焊操作
         for i in range(len(data0.datatable_output)):
@@ -261,16 +255,13 @@ def read_excel(data0):
         tmp_input.append(read_input.loc[i].tolist())
     # print(tmp_input)
     for in_p in tmp_input:
-        l = in_p[2]
         n = int(in_p[1])
         k = n // total_num
-        part_sum = 0
-        for i in range(0, k):
-            raw.append([[part_sum, part_sum + total_num], l, total_num, l])  # [编号开头（取得到），编号末尾（取不到）]
+        part_sum = 1
+        for i in range(k):
+            raw.append([[part_sum, part_sum + total_num - 1], in_p[2], total_num, in_p[2]])  # [编号开头（取得到），编号末尾（取不到）]
             part_sum += total_num
-        raw.append([[part_sum, part_sum + n - total_num * k], l, n - total_num * k, l])  # [编号开头（取得到），编号末尾（取不到）]
-    # print(raw)
-
+        raw.append([[part_sum, part_sum + n - 1 - total_num * k], in_p[2], n - total_num * k, in_p[2]])
     return matrix, product, raw
 
 
@@ -345,20 +336,19 @@ def display_raw(finished_product):  # 用于记录原料管切割情况
 
 
 if __name__ == '__main__':
+    start = time.time()
     data = initial_data()
     group, product, matrix = initialize(data)
     total_num = sum([p[0][0][1] for p in product])
-    for i in range(data.num):
+    for x in range(data.num):
         group = cross(group, product, matrix)
     print(product)
-    # for g in group:
-    #     print(g[-1])
     opt = group[0]
     print(opt)
     opt.pop()
-    fit, pro = cal_fitness(opt, product, matrix, show_composition=data.show_composition)
-    print(fit - total_num)
-    for p in pro:
-        print(p)
+    fit, pro = cal_fitness(opt, product, matrix)
+    print("焊点数为%d" % (fit - total_num))
     raw_cut_method = display_raw(pro)
-    # print(raw_cut_method)
+    if data.show_composition:
+        [print(p) for p in pro]
+    print("此次消耗时间为%f" % (time.time() - start))
