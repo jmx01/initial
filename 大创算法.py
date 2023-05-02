@@ -8,37 +8,6 @@ import numpy as np
 from initial_data import initial_data
 
 
-def ox(solution1, solution2):
-    # 生成两个不一样的值
-    rand = random.sample(range(0, len(solution1) - 1), 2)
-    min_rand, max_rand = min(rand), max(rand)
-
-    copy_mid = [solution1[min_rand:max_rand + 1], solution2[min_rand:max_rand + 1]]
-    s1_head = solution1[:min_rand]
-    s1_head.reverse()
-    s1_tail = solution1[max_rand + 1:]
-    s1_tail.reverse()
-    s2_head = solution2[:min_rand]
-    s2_head.reverse()
-    s2_tail = solution2[max_rand + 1:]
-    s2_tail.reverse()
-    swap = [s2_head + s2_tail, s1_head + s1_tail]
-
-    c_new = []
-    for ix in range(2):
-        c_swap = []
-        while swap[ix]:
-            tmp = swap[ix].pop()
-            if tmp not in copy_mid[ix]:
-                c_swap.append(tmp)
-        for c in copy_mid[1 - ix]:
-            if c not in copy_mid[ix]:
-                c_swap.append(c)
-        c_new.append(c_swap[len(solution1) - max_rand - 1:] + copy_mid[ix] + c_swap[:len(solution1) - max_rand - 1])
-
-    return c_new
-
-
 # 这个函数和standard_data_input函数可能相似
 def merge(res_list):  # 合并所有长度相同的余料的函数
     output = copy.deepcopy(res_list)
@@ -71,8 +40,9 @@ def cal_fitness(solution_in, product0, matrix0):
         for p in product0:  # 这个循环用于将选中的s，即原料管，填入产品管中
             if p[8]:  # 若该产品管已完成，则直接研究下一根产品管
                 continue
-            if p[5] - data.pick_up < p[3] <= p[5] and p[3] + raw_length < p[6] and p[4] != p[6] or p[4] == p[6] and p[
-                3] == p[5] and p[3] + raw_length < p[6]:  # 若目前的原料管受到禁接区约束限制，无法添加到当前研究的产品管是，则直接研究下一根产品管
+            if (p[5] - data.pick_up < p[3] <= p[5] and p[3] + raw_length < p[6] and p[4] != p[6]) or (
+                    p[4] == p[6] and p[3] == p[5] and p[3] + raw_length < p[6]):
+                # 若目前的原料管受到禁接区约束限制，无法添加到当前研究的产品管是，则直接研究下一根产品管
                 continue
             if raw_num >= p[1]:  # 若原料管数量大于当前研究的产品管组，则可在原料管不变的条件下继续到下一根产品管
                 raw_num -= p[1]
@@ -140,8 +110,8 @@ def process(s, p, matrix0, raw_length, raw_num):
     elif temp_length >= p[6]:  # 若安装整段整段原料管会超过下个禁接区，则分情况讨论
         if temp_length >= p[4]:  # 超过全长
             used_length = p[4] - p[3]
-            temp = [s[0], used_length, raw_num, s[-1]]
-            temp2 = [s[0], s[1] - temp[1], raw_num, s[-1]]
+            temp = [copy.deepcopy(s[0]), used_length, raw_num, s[-1]]
+            temp2 = [temp[0], s[1] - temp[1], raw_num, s[-1]]
             p[3] = p[4]
             p[2].append(temp)
             p[7] += 1
@@ -174,8 +144,8 @@ def process(s, p, matrix0, raw_length, raw_num):
         used_length = p[5] - p[3]
         flag = True
     if flag:
-        temp = [s[0], used_length, raw_num, s[-1]]
-        temp2 = [s[0], s[1] - temp[1], raw_num, s[-1]]
+        temp = [copy.deepcopy(s[0]), used_length, raw_num, s[-1]]
+        temp2 = [temp[0], s[1] - temp[1], raw_num, s[-1]]
         p[3] = p[5]
         p[2].append(temp)
         if temp2[1] >= data.pick_up:  # 余料小于指定长度（data.pick_up）的不要
@@ -260,19 +230,48 @@ def initialize(data0):
     return groups, product0, matrix0
 
 
+def ox(solution1, solution2):
+    # 生成两个不一样的值
+    rand = random.sample(range(0, len(solution1) - 1), 2)
+    min_rand, max_rand = min(rand), max(rand)
+
+    copy_mid = [solution1[min_rand:max_rand + 1], solution2[min_rand:max_rand + 1]]
+    s1_head = solution1[:min_rand]
+    s1_head.reverse()
+    s1_tail = solution1[max_rand + 1:]
+    s1_tail.reverse()
+    s2_head = solution2[:min_rand]
+    s2_head.reverse()
+    s2_tail = solution2[max_rand + 1:]
+    s2_tail.reverse()
+    swap = [s2_head + s2_tail, s1_head + s1_tail]
+
+    c_new = []
+    for ix in range(2):
+        c_swap = []
+        while swap[ix]:
+            tmp = swap[ix].pop()
+            if tmp not in copy_mid[ix]:
+                c_swap.append(tmp)
+        for c in copy_mid[1 - ix]:
+            if c not in copy_mid[ix]:
+                c_swap.append(c)
+        c_new.append(c_swap[len(solution1) - max_rand - 1:] + copy_mid[ix] + c_swap[:len(solution1) - max_rand - 1])
+
+    return c_new
+
+
 def cross(groups, product0, matrix0):
     loc_fitness = len(groups[0]) - 1
 
-    rand = [random.sample((0, len(groups) - 1), 2), random.sample((0, len(groups) - 1), 2)]
+    rand = [random.sample(range(0, len(groups) - 1), 2), random.sample(range(0, len(groups) - 1), 2)]
     index1 = np.where(groups[rand[0][0]][loc_fitness] < groups[rand[0][1]][loc_fitness], rand[0][0], rand[0][1])
     index2 = np.where(groups[rand[1][0]][loc_fitness] < groups[rand[1][1]][loc_fitness], rand[1][0], rand[1][1])
     parent1 = groups[index1]
     parent2 = groups[index2]
 
-    par1 = copy.deepcopy(parent1)
-    par1.pop()
-    par2 = copy.deepcopy(parent2)
-    par2.pop()
+    par1 = copy.deepcopy(parent1[:-1])
+    par2 = copy.deepcopy(parent2[:-1])
     children = ox(par1, par2)
 
     index = np.where(random.random() > 0.5, 0, 1)
@@ -323,5 +322,5 @@ if __name__ == '__main__':
     print("焊点数为%d" % (fit - total_num))
     raw_cut_method = display_raw(pro)
     if data.show_composition:
-        [print(p) for p in pro]
+        [print(p[0:3] + p[-4:]) for p in pro]
     print("此次消耗时间为%f" % (time.time() - start))

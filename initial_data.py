@@ -188,9 +188,6 @@ class initial_data(object):
     flag_yuan = False  # 是否使用袁浩的禁接区
     show_composition = True  # 是否展示pro
     datatable_input, datatable_output, deal_no_pick_zone = path(file[2])
-    # datatable_input = 'data_input.xlsx'  # 输入文件的路径
-    # datatable_output = 'data_output.xlsx'  # 零件文件路径
-    # deal_no_pick_zone = 'zone.xlsx'  # 禁接区文件路径
 
     datatable_input = pd.read_excel(datatable_input)  # [编号、数量、长度]  输入材料
     datatable_output = pd.read_excel(datatable_output)  # [编号、数量、长度、焊缝上限]  输出材料
