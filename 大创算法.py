@@ -26,8 +26,16 @@ def merge(res_list):  # 合并所有长度相同的余料的函数
 
 
 def cal_fitness(solution_in, product0, matrix0):
+    """
+    计算适应度
+    :param solution_in:某个子个体
+    :param product0:产品管读取时的样子
+    :param matrix0:禁接矩阵
+    :return:（适应度，切割方法）
+    """
     fitness = 0
     solution = copy.deepcopy(solution_in)
+    product0 = copy.deepcopy(product0)  # 不能删这个，因为我们用的一直是最初的product0，不能改变
     unused_list = []
     flag = True
 
@@ -153,6 +161,11 @@ def process(s, p, matrix0, raw_length, raw_num):
 
 
 def read_excel(data0):
+    """
+    读数据，生成第一个子个体，禁接区，产品管矩阵
+    :param data0: initial_data()类数据
+    :return: 禁接区，产品管矩阵，子个体
+    """
     read_output = data0.datatable_output
     matrix0 = []  # 将多个禁接列表装在matrix列表中，构成禁接矩阵。
     product0 = []  # 对原料管的读取和一些准备工作
@@ -185,7 +198,6 @@ def read_excel(data0):
                 [copy.deepcopy(tmp_output), product_num, [], 0, total_len, add_matrix[0][0], add_matrix[0][1], 0, False,
                  [], k]]
             matrix0.append(add_matrix)
-            tmp_output.remove(cpy_output[j - 1])
 
     else:  # 不进行原料管虚焊操作
         for i in range(len(data0.datatable_output)):
@@ -201,41 +213,51 @@ def read_excel(data0):
     raw = []
     for i in range(len(read_input)):
         tmp_input.append(read_input.loc[i].tolist())
-    for in_p in tmp_input:
-        n = int(in_p[1])
+        n = int(tmp_input[-1][1])
         k = n // total
         part_sum = 1
-        for i in range(k):
-            raw.append([[part_sum, part_sum + total - 1], in_p[2], total, in_p[2]])  # [编号开头（取得到），编号末尾（取不到）]
+        for j in range(k):
+            raw.append([[part_sum, part_sum + total - 1], tmp_input[-1][2], total, tmp_input[-1][2]])
             part_sum += total
-        raw.append([[part_sum, part_sum + n - 1 - total * k], in_p[2], n - total * k, in_p[2]])
+        raw.append([[part_sum, part_sum + n - 1 - total * k], tmp_input[-1][2], n - total * k, tmp_input[-1][2]])
     return matrix0, product0, raw
 
 
 def initialize(data0):
-    matrix0, product0, raw = read_excel(data0)
+    """
+    初始化，生成种群，产品管，禁接区
+    :param data0:initial_data()类的数据
+    :return:初始种群
+    """
+    "读取数据"
+    matrix0, product0, this = read_excel(data)
+    "生成种群，添加适应度,并按适应度排序"
     groups = []
-
     for i in range(data0.algorithm_solution_quantity):
-        random.shuffle(raw)
-        groups.append(copy.deepcopy(raw))
-    groups[0].sort(key=lambda func: func[1], reverse=True)
-    for s in groups:
-        fitness = cal_fitness(s, product0, matrix0)
+        random.shuffle(this)
+        groups.append(copy.deepcopy(this))
+        fitness = cal_fitness(groups[-1], product0, matrix0)
         while fitness == -1:
-            random.shuffle(s)
-            fitness = cal_fitness(s, product0, matrix0)
-        s.append(fitness)
-    groups.sort(key=lambda func: func[1])
+            random.shuffle(groups[-1])
+            fitness = cal_fitness(groups[-1], product0, matrix0)
+        groups[-1].append(fitness)
+    groups.sort(key=lambda func: func[-1][0])
     return groups, product0, matrix0
 
 
 def ox(solution1, solution2):
-    # 生成两个不一样的值
+    """
+    交换函数，交换两个等长列表的部分指定区域
+    :param solution1: 列表1
+    :param solution2: 列表2
+    :return: [子列表1，子列表2]
+    """
+    "找两个不一样的点"
     rand = random.sample(range(0, len(solution1) - 1), 2)
     min_rand, max_rand = min(rand), max(rand)
-
+    "生成不变区域"
     copy_mid = [solution1[min_rand:max_rand + 1], solution2[min_rand:max_rand + 1]]
+    "生成改变区域"
     s1_head = solution1[:min_rand]
     s1_head.reverse()
     s1_tail = solution1[max_rand + 1:]
@@ -245,7 +267,7 @@ def ox(solution1, solution2):
     s2_tail = solution2[max_rand + 1:]
     s2_tail.reverse()
     swap = [s2_head + s2_tail, s1_head + s1_tail]
-
+    "生成子列表"
     c_new = []
     for ix in range(2):
         c_swap = []
@@ -262,34 +284,29 @@ def ox(solution1, solution2):
 
 
 def cross(groups, product0, matrix0):
-    loc_fitness = len(groups[0]) - 1
-
+    """
+    遗传函数，用来生成新的种群
+    :param groups:上一代种群
+    :param product0:产品管矩阵
+    :param matrix0:产品管禁接区
+    :return:新种群
+    """
+    "找到父母个体"
     rand = [random.sample(range(0, len(groups) - 1), 2), random.sample(range(0, len(groups) - 1), 2)]
-    index1 = np.where(groups[rand[0][0]][loc_fitness] < groups[rand[0][1]][loc_fitness], rand[0][0], rand[0][1])
-    index2 = np.where(groups[rand[1][0]][loc_fitness] < groups[rand[1][1]][loc_fitness], rand[1][0], rand[1][1])
-    parent1 = groups[index1]
-    parent2 = groups[index2]
-
-    par1 = copy.deepcopy(parent1[:-1])
-    par2 = copy.deepcopy(parent2[:-1])
-    children = ox(par1, par2)
-
+    index1 = np.where(groups[rand[0][0]][-1][0] < groups[rand[0][1]][-1][0], rand[0][0], rand[0][1])
+    index2 = np.where(groups[rand[1][0]][-1][0] < groups[rand[1][1]][-1][0], rand[1][0], rand[1][1])
+    parent1 = copy.deepcopy(groups[index1][:-1])
+    parent2 = copy.deepcopy(groups[index2][:-1])
+    "生成一个子个体"
+    children = ox(parent1, parent2)
     index = np.where(random.random() > 0.5, 0, 1)
     children = children[index]
-
+    "替换适应度靠后的种群个体"
     rand_replace = random.randint(len(groups) // 2, len(groups) - 1)
-    groups.sort(key=lambda func: func[loc_fitness])
     groups[rand_replace] = children
     f_c = cal_fitness(children, product0, matrix0)
     groups[rand_replace].append(f_c)
-    groups.sort(key=lambda func: func[loc_fitness])
-
-    return groups
-
-
-def cal_total_num(product_in):
-    num = sum([p[1] for p in product_in])
-    return num
+    groups.sort(key=lambda func: func[-1][0])  # 按适应度排序
 
 
 def separate_connection(finished_product):
@@ -310,17 +327,20 @@ def display_raw(finished_product):  # 用于记录原料管切割情况
 if __name__ == '__main__':
     start = time.time()
     data = initial_data()
-    group, product, matrix = initialize(data)
-    total_num = sum([p[1] for p in product])
-    for x in range(data.num):
-        group = cross(group, product, matrix)
-    print(product)
-    opt = group[0]
-    print(opt)
-    opt.pop()
-    fit, pro = cal_fitness(opt, product, matrix)
-    print("焊点数为%d" % (fit - total_num))
-    raw_cut_method = display_raw(pro)
-    if data.show_composition:
-        [print(p[0:3] + p[-4:]) for p in pro]
+    total_num = data.datatable_output.iloc[0][1] * len(data.datatable_output)  # 产品管总数
+    group_initial, product, matrix = initialize(data)
+    fit_opt, pro_opt = group_initial[0][-1][0], group_initial[0][-1][1]
+
+    I = True
+    while I:  # 去除小于0的可能
+        for x in range(data.num_in):
+            cross(group_initial, product, matrix)
+        fit_opt, pro_opt = group_initial[0][-1][0], group_initial[0][-1][1]
+        if fit_opt >= total_num:
+            I = False
+
+    print("焊点数为%d" % (fit_opt - total_num))
+    raw_cut_method = display_raw(pro_opt)
+    # if data.show_composition:
+    #     [print(p[0:3] + p[-4:]) for p in pro_opt]
     print("此次消耗时间为%f" % (time.time() - start))
