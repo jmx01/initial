@@ -204,7 +204,9 @@ class initial_data(object):
     else:
         new_pick_zone = copy.deepcopy(deal_no_pick_zone)  # 老禁接区
 
-    dt_input = standard_data_input(datatable_input)  #
+    dt_input = standard_data_input(datatable_input)
+    for i in range(len(dt_input)):
+        dt_input.iloc[i, 2] = dt_input.iloc[i, 2] * 1000
     no_pick_zone, calculate_no_pick_zone = standard_no_pick_zone(deal_no_pick_zone, alpha)
     new_no_pick_zone, new_calculate_no_pick_zone = standard_no_pick_zone(new_pick_zone, alpha)
     datatable_output = standard_data_output(datatable_output)
@@ -218,11 +220,8 @@ class initial_data(object):
         change_zone, change_zone_cal = standard_no_pick_zone(change_zone, self.alpha)
         new_change_zone = []
         new_change_zone_cal = change_zone_cal[0][1]
-        if new_change_zone_cal[0][1] == 1:
-            i = 0
-        else:
-            i = 1
 
+        i = np.where(new_change_zone_cal[0][1] == 1, 0, 1)
         while i < len(new_change_zone_cal):
             if i == 0:
                 new_change_zone.append([0, new_change_zone_cal[i][0]])

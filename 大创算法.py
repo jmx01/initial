@@ -39,7 +39,7 @@ def ox(solution1, solution2):
     return c_new
 
 
-## 这个函数和standard_data_input函数可能相似
+# 这个函数和standard_data_input函数可能相似
 def merge(res_list):  # 合并所有长度相同的余料的函数
     output = copy.deepcopy(res_list)
     ans = []
@@ -56,25 +56,23 @@ def merge(res_list):  # 合并所有长度相同的余料的函数
     return ans
 
 
-def cal_fitness(solution_in, product, matrix):
+def cal_fitness(solution_in, product0, matrix0):
     fitness = 0
     solution = copy.deepcopy(solution_in)
     unused_list = []
     flag = True
 
-    for s in solution:
-        raw_length = s[1]  # 被研究原料管s的长度
-        raw_num = s[2]  # 被研究的原料管s剩余的数量，开始赋值为s的总数
-        used_num = s[0][0]  # 用于统计该组原料管被用了多少根
+    for s_in in solution:
+        raw_length = s_in[1]  # 被研究原料管s的长度
+        raw_num = s_in[2]  # 被研究的原料管s剩余的数量，开始赋值为s的总数
+        used_num = s_in[0][0]  # 用于统计该组原料管被用了多少根
         original_start_num = used_num
         total_num_of_s = raw_num  # 用于保存原料管s的总数
-        for p in product:  # 这个循环用于将选中的s，即原料管，填入产品管中
-            s_in = copy.deepcopy(s)
+        for p in product0:  # 这个循环用于将选中的s，即原料管，填入产品管中
             if p[8]:  # 若该产品管已完成，则直接研究下一根产品管
                 continue
             if p[5] - data.pick_up < p[3] <= p[5] and p[3] + raw_length < p[6] and p[4] != p[6] or p[4] == p[6] and p[
-                3] == p[5] and p[3] + raw_length < p[6]:
-                # 若目前的原料管受到禁接区约束限制，无法添加到当前研究的产品管是，则直接研究下一根产品管
+                3] == p[5] and p[3] + raw_length < p[6]:  # 若目前的原料管受到禁接区约束限制，无法添加到当前研究的产品管是，则直接研究下一根产品管
                 continue
             if raw_num >= p[1]:  # 若原料管数量大于当前研究的产品管组，则可在原料管不变的条件下继续到下一根产品管
                 raw_num -= p[1]
@@ -93,28 +91,26 @@ def cal_fitness(solution_in, product, matrix):
                 s_in[0][1] = original_start_num + total_num_of_s  # 原料管分批
                 s_in[2] = s_in[0][1] - s_in[0][0]  # 改变对当前组原料管的总数的统计
                 temp = raw_num
-                loc = product.index(p)
+                loc = product0.index(p)
                 copy_p = copy.deepcopy(p)
                 copy_p[1] = p[1] - raw_num
-                product.insert(loc + 1, copy_p)
+                product0.insert(loc + 1, copy_p)
                 p[1] = temp
                 raw_num = 0
-            process(s_in, p, matrix[p[-1]], raw_length, temp)  # 具体的原料管安装到产品管的步骤
+            process(s_in, p, matrix0[p[-1]], raw_length, temp)  # 具体的原料管安装到产品管的步骤
         if raw_num > 0:  # 若原料管有尚未使用完的，则放入unused list之中备用
-            s_copy = copy.deepcopy(s)
-            s_copy[2] = raw_num
-            s_copy[0][0] = used_num  # 原料管分批
-            s_copy[0][1] = original_start_num + total_num_of_s  # 原料管分批
-            unused_list.append(s_copy)
-        if solution.index(s) == len(solution) - 1:  # 若已遍历到原料管组列表中的最后一个原料管组，则将每个product[9]中存放的所有余料放入res_list中
+            s_in[2] = raw_num
+            s_in[0][0] = used_num  # 原料管分批
+            s_in[0][1] = original_start_num + total_num_of_s  # 原料管分批
+            unused_list.append(s_in)
+        if solution.index(s_in) == len(solution) - 1:  # 若已遍历到原料管组列表中的最后一个原料管组，则将每个product[9]中存放的所有余料放入res_list中
             res_list = []
-            for p in product:
+            for p in product0:
                 if not p[8]:  # 若有未完成的产品管，则改变flag，使循环能够继续，否则保持flag为True，让外部大循环结束
                     flag = False
-                res = copy.deepcopy(p[9])
-                p[9] = []
-                for r in res:
+                for r in p[9]:
                     res_list.append(r)
+                p[9] = []
             # res_list = merge(res_list)     # 最好先不使用merge函数
             add_list = unused_list + res_list
             add_list.sort(key=lambda func: int(func[1] * func[2]),
@@ -123,18 +119,20 @@ def cal_fitness(solution_in, product, matrix):
             if flag:
                 break
 
-    for p in product:
+    for p in product0:
         fitness += p[1] * p[7]
         if not p[3] == p[4]:
             fitness = -1
             break
-    return fitness, product
+    return fitness, product0
 
 
-def process(s_in, p, matrix, raw_length, raw_num):
-    s = copy.deepcopy(s_in)
+def process(s, p, matrix0, raw_length, raw_num):
     s[2] = raw_num
     temp_length = p[3] + raw_length
+    used_length = 0
+    flag = False
+
     if temp_length <= p[5]:  # 若安装整段原料管不会进入下个禁接区，则直接将其装上去
         p[3] = temp_length
         p[2].append(s)
@@ -142,41 +140,29 @@ def process(s_in, p, matrix, raw_length, raw_num):
     elif temp_length >= p[6]:  # 若安装整段整段原料管会超过下个禁接区，则分情况讨论
         if temp_length >= p[4]:  # 超过全长
             used_length = p[4] - p[3]
+            temp = [s[0], used_length, raw_num, s[-1]]
+            temp2 = [s[0], s[1] - temp[1], raw_num, s[-1]]
             p[3] = p[4]
-            temp = copy.deepcopy(s)
-            temp[2] = raw_num
-            temp[1] = used_length
             p[2].append(temp)
             p[7] += 1
             p[8] = True
-            temp2 = copy.deepcopy(temp)
-            temp2[1] = s[1] - used_length
-            temp2[2] = raw_num
+
             if temp2[1] >= data.pick_up:  # 余料小于指定长度（data.pick_up）的不要
                 p[9].append(temp2)
         else:  # 未超过全长
             p[3] = temp_length
             p[7] += 1
-            for m in matrix:
+            for m in matrix0:
                 if m[0] < temp_length < m[1]:  # 落在禁接区之内
                     p[5], p[6] = m[0], m[1]
                     used_length = p[5] - p[3] + raw_length
-                    p[3] = p[5]
-                    temp = copy.deepcopy(s)
-                    temp[2] = raw_num
-                    temp[1] = used_length
-                    p[2].append(temp)
-                    temp2 = copy.deepcopy(temp)
-                    temp2[1] = s[1] - used_length
-                    temp2[2] = raw_num
-                    if temp2[1] >= data.pick_up:  # 余料小于指定长度（data.pick_up）的不要
-                        p[9].append(temp2)
+                    flag = True
                     break
-                if m[0] >= temp_length:  # 在禁接区之前
+                elif m[0] >= temp_length:  # 在禁接区之前
                     p[5], p[6] = m[0], m[1]
                     p[2].append(s)
                     break
-                if matrix.index(m) == len(matrix) - 1:  # 已超过最后一个禁接区
+                elif matrix0.index(m) == len(matrix0) - 1:  # 已超过最后一个禁接区
                     p[5], p[6] = p[4], p[4]
                     p[2].append(s)
                     break
@@ -186,13 +172,12 @@ def process(s_in, p, matrix, raw_length, raw_num):
             return p
         p[7] += 1
         used_length = p[5] - p[3]
+        flag = True
+    if flag:
+        temp = [s[0], used_length, raw_num, s[-1]]
+        temp2 = [s[0], s[1] - temp[1], raw_num, s[-1]]
         p[3] = p[5]
-        temp = copy.deepcopy(s)
-        temp[2] = raw_num
-        temp[1] = used_length
         p[2].append(temp)
-        temp2 = copy.deepcopy(temp)
-        temp2[1] = s[1] - used_length
         if temp2[1] >= data.pick_up:  # 余料小于指定长度（data.pick_up）的不要
             p[9].append(temp2)
 
@@ -208,11 +193,9 @@ def read_excel(data0):
     if data0.connection:  # 进行原料管虚焊操作
         index = list(range(len(data0.datatable_output)))
         random.shuffle(index)
-        tmp_output = []
         for i in range(len(index)):
-            tmp_output.append([*copy.deepcopy(cpy_output[index[i]]), index[i]])
-        cpy_output = copy.deepcopy(tmp_output)
-        cpy_output.sort(key=lambda func: func[1])
+            cpy_output[index[i]] = [*cpy_output[index[i]], index[i]]
+        tmp_output = copy.deepcopy(cpy_output)
         for j in range(len(tmp_output) - 1):
             k = j
             add_matrix = data0.change_zone(index)[0]
@@ -237,7 +220,6 @@ def read_excel(data0):
     else:  # 不进行原料管虚焊操作
         for i in range(len(data0.datatable_output)):
             matrix0 += [data0.change_zone([i])[0]]
-        for i in range(len(read_output)):
             total_len = Decimal(str(cpy_output[i][2])).quantize(Decimal("0.01"), rounding="ROUND_HALF_UP")
             product_num = int(cpy_output[i][1])
             product0 += [
@@ -262,7 +244,6 @@ def read_excel(data0):
 
 def initialize(data0):
     matrix0, product0, raw = read_excel(data0)
-    product0 = copy.deepcopy(product0)
     groups = []
 
     for i in range(data0.algorithm_solution_quantity):
