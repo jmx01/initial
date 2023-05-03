@@ -3,7 +3,7 @@ from greedy_solution import greedy_solve
 
 
 def main():
-    initial = []  # 生成64个初始解，1个贪婪解，63个随机解
+    initial = []  # 生成64个初始解，1个贪婪解，1个组批解
 
     GS = greedy_solve()
 

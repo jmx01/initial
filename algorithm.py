@@ -3,9 +3,12 @@ import random
 import time
 from decimal import Decimal
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from initial_data import initial_data
+
+plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
 
 
 # 这个函数和standard_data_input函数可能相似
@@ -68,13 +71,10 @@ def cal_fitness(solution_in, product0, matrix0):
                 s_in[0][0] = used_num  # 原料管分批
                 s_in[0][1] = original_start_num + total_num_of_s  # 原料管分批
                 s_in[2] = s_in[0][1] - s_in[0][0]  # 改变对当前组原料管的总数的统计
-                temp = raw_num
-                loc = product0.index(p)
-                copy_p = copy.deepcopy(p)
+                temp, copy_p = raw_num, copy.deepcopy(p)
                 copy_p[1] = p[1] - raw_num
-                product0.insert(loc + 1, copy_p)
-                p[1] = temp
-                raw_num = 0
+                product0.insert(product0.index(p) + 1, copy_p)
+                p[1], raw_num = temp, 0
             process(s_in, p, matrix0[p[-1]], raw_length, temp)  # 具体的原料管安装到产品管的步骤
         if raw_num > 0:  # 若原料管有尚未使用完的，则放入unused list之中备用
             s_in[2] = raw_num
@@ -178,8 +178,7 @@ def read_excel(data0):
         random.shuffle(index)
         for i in range(len(index)):
             cpy_output[index[i]] = [*cpy_output[index[i]], index[i]]
-        tmp_output = copy.deepcopy(cpy_output)
-        for j in range(len(tmp_output) - 1):
+        for j in range(len(cpy_output) - 1):
             k = j
             add_matrix = data0.change_zone(index)[0]
             removed_i = cpy_output[j][-1]
@@ -192,10 +191,10 @@ def read_excel(data0):
                 k -= 1
                 continue
             total_len = 0
-            for tmp in tmp_output:
+            for tmp in cpy_output:
                 total_len += Decimal(str(tmp[2])).quantize(Decimal("0.01"), rounding="ROUND_HALF_UP")
             product0 += [
-                [copy.deepcopy(tmp_output), product_num, [], 0, total_len, add_matrix[0][0], add_matrix[0][1], 0, False,
+                [cpy_output, product_num, [], 0, total_len, add_matrix[0][0], add_matrix[0][1], 0, False,
                  [], k]]
             matrix0.append(add_matrix)
 
@@ -207,19 +206,14 @@ def read_excel(data0):
             product0 += [
                 [[cpy_output[i]], product_num, [], 0, total_len, matrix0[i][0][0], matrix0[i][0][1], 0, False, [], i]]
 
-    total = sum([p[1] for p in product0])
-    read_input = data0.dt_input  # 原料管以及其分组和编号处理
-    tmp_input = []
+    "原料管处理"
+    read_input = data0.dt_input
     raw = []
     for i in range(len(read_input)):
-        tmp_input.append(read_input.loc[i].tolist())
-        n = int(tmp_input[-1][1])
-        k = n // total
-        part_sum = 1
-        for j in range(k):
-            raw.append([[part_sum, part_sum + total - 1], tmp_input[-1][2], total, tmp_input[-1][2]])
-            part_sum += total
-        raw.append([[part_sum, part_sum + n - 1 - total * k], tmp_input[-1][2], n - total * k, tmp_input[-1][2]])
+        raw.append(read_input.loc[i].tolist())
+        part_sum, n, length = 1, int(raw[-1][1]), raw[-1][2]
+        del raw[-1]
+        raw.append([[part_sum, n], length, n, length])
     return matrix0, product0, raw
 
 
@@ -237,7 +231,7 @@ def initialize(data0):
         random.shuffle(this)
         groups.append(copy.deepcopy(this))
         fitness = cal_fitness(groups[-1], product0, matrix0)
-        while fitness == -1:
+        while fitness == -1 or fitness[0] < data0.total_num:
             random.shuffle(groups[-1])
             fitness = cal_fitness(groups[-1], product0, matrix0)
         groups[-1].append(fitness)
@@ -305,6 +299,9 @@ def cross(groups, product0, matrix0):
     rand_replace = random.randint(len(groups) // 2, len(groups) - 1)
     groups[rand_replace] = children
     f_c = cal_fitness(children, product0, matrix0)
+    if f_c[0] < data.total_num or f_c == -1:
+        random.shuffle(children)
+        f_c = cal_fitness(children, product0, matrix0)
     groups[rand_replace].append(f_c)
     groups.sort(key=lambda func: func[-1][0])  # 按适应度排序
 
@@ -324,21 +321,28 @@ def display_raw(finished_product):  # 用于记录原料管切割情况
     return all_raw_part
 
 
+def fit_list_plot(fit):
+    plt.plot(fit)
+    plt.title("焊点数迭代过程")
+    plt.xlabel("迭代次数")
+    plt.ylabel("焊点数")
+    plt.show()
+
+
 if __name__ == '__main__':
     start = time.time()
     data = initial_data()
-    total_num = data.datatable_output.iloc[0][1] * len(data.datatable_output)  # 产品管总数
+    total_num = data.total_num  # 产品管总数
     group_initial, product, matrix = initialize(data)
     fit_opt, pro_opt = group_initial[0][-1][0], group_initial[0][-1][1]
+    fit_list = [fit_opt - total_num]
 
-    I = True
-    while I:  # 去除小于0的可能
-        for x in range(data.num_in):
-            cross(group_initial, product, matrix)
-        fit_opt, pro_opt = group_initial[0][-1][0], group_initial[0][-1][1]
-        if fit_opt >= total_num:
-            I = False
+    for x in range(data.num):
+        cross(group_initial, product, matrix)
+        fit_list.append(group_initial[0][-1][0] - total_num)
+    fit_opt, pro_opt = group_initial[0][-1][0], group_initial[0][-1][1]
 
+    # fit_list_plot(fit_list)  # 对迭代的绘图
     print("焊点数为%d" % (fit_opt - total_num))
     raw_cut_method = display_raw(pro_opt)
     # if data.show_composition:

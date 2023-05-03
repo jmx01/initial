@@ -177,15 +177,14 @@ def seam_num(table):
 
 class initial_data(object):
     greedy_solution_quantity = 1  # 需要的贪婪解初始数
-    algorithm_solution_quantity = 40  # 组批解数
+    algorithm_solution_quantity = 40  # 种群数
     over_time = 30  # 初始解生成时间限制
     pick_up = 500
     pick_up = Decimal(pick_up).quantize(Decimal("0.01"), rounding="ROUND_HALF_UP")  # 可放弃的最大材料长度
     alpha = 50  # 建议离禁焊区的距离
     e = 0.05  # 概率随机取值
     M = 1e8  # 一个很大的数
-    num_in = 1000  # 内部迭代次数
-    num_out = 10  # 外部迭代次数
+    num = 1000  # 迭代次数
     connection = False  # 是否虚焊
     flag_yuan = False  # 是否使用袁浩的禁接区
     show_composition = True  # 是否展示pro
@@ -194,6 +193,7 @@ class initial_data(object):
     datatable_input = pd.read_excel(datatable_input)  # [编号、数量、长度]  输入材料
     datatable_output = pd.read_excel(datatable_output)  # [编号、数量、长度、焊缝上限]  输出材料
     datatable_output = seam_num(datatable_output)
+    total_num = datatable_output.iloc[0][1] * len(datatable_output)  # 零件管总数量
     material_length = sum(np.array(datatable_input.iloc[:, 1]) * np.array(datatable_input.iloc[:, 2]))  # 输入材料总长度
     product_length = sum(np.array(datatable_output.iloc[:, 1]) * np.array(datatable_output.iloc[:, 2]))  # 输出材料总长度
 
