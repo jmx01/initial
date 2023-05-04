@@ -113,7 +113,7 @@ def process(s, p, matrix0, raw_length, raw_num):
 
     if temp_length <= p[5]:  # 若安装整段原料管不会进入下个禁接区，则直接将其装上去
         p[3] = temp_length
-        p[2].append(s)
+        p[2].append(copy.deepcopy(s))
         p[7] += 1
     elif temp_length >= p[6]:  # 若安装整段整段原料管会超过下个禁接区，则分情况讨论
         if temp_length >= p[4]:  # 超过全长
@@ -138,11 +138,11 @@ def process(s, p, matrix0, raw_length, raw_num):
                     break
                 elif m[0] >= temp_length:  # 在禁接区之前
                     p[5], p[6] = m[0], m[1]
-                    p[2].append(s)
+                    p[2].append(copy.deepcopy(s))
                     break
                 elif matrix0.index(m) == len(matrix0) - 1:  # 已超过最后一个禁接区
                     p[5], p[6] = p[4], p[4]
-                    p[2].append(s)
+                    p[2].append(copy.deepcopy(s))
                     break
 
     else:  # 若下一段管正好落在下一个禁接区之中
@@ -155,7 +155,7 @@ def process(s, p, matrix0, raw_length, raw_num):
         temp = [copy.deepcopy(s[0]), used_length, raw_num, s[-1]]
         temp2 = [temp[0], s[1] - temp[1], raw_num, s[-1]]
         p[3] = p[5]
-        p[2].append(temp)
+        p[2].append(copy.deepcopy(temp))
         if temp2[1] >= data.pick_up:  # 余料小于指定长度（data.pick_up）的不要
             p[9].append(temp2)
 
@@ -343,8 +343,8 @@ if __name__ == '__main__':
     fit_opt, pro_opt = group_initial[0][-1][0], group_initial[0][-1][1]
 
     # fit_list_plot(fit_list)  # 对迭代的绘图
-    print("焊点数为%d" % (fit_opt - total_num))
     raw_cut_method = display_raw(pro_opt)
     # if data.show_composition:
     #     [print(p[0:3] + p[-4:]) for p in pro_opt]
+    print("焊点数为%d" % (fit_opt - total_num))
     print("此次消耗时间为%f" % (time.time() - start))

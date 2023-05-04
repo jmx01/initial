@@ -184,7 +184,7 @@ class initial_data(object):
     alpha = 50  # 建议离禁焊区的距离
     e = 0.05  # 概率随机取值
     M = 1e8  # 一个很大的数
-    num = 1000  # 迭代次数
+    num = 500  # 迭代次数
     connection = False  # 是否虚焊
     flag_yuan = False  # 是否使用袁浩的禁接区
     show_composition = True  # 是否展示pro
