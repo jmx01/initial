@@ -60,17 +60,17 @@ def cal_fitness(solution_in, product0, matrix0):
                 temp = p[1]
                 s_in[0][0] = used_num  # 原料管分批
                 used_num += p[1]
-                s_in[0][1] = used_num  # 原料管分批
+                s_in[0][1] = used_num - 1  # 原料管分批
                 s_in[2] = s_in[0][1] - s_in[0][0]  # 改变对当前组原料管的总数的统计
             elif raw_num == 0:  # 若原料管用完且不缺，则尝试放入下一组原料管
                 s_in[0][0] = used_num  # 原料管分批
                 s_in[0][1] = original_start_num + total_num_of_s  # 原料管分批
-                s_in[2] = s_in[0][1] - s_in[0][0]  # 改变对当前组原料管的总数的统计
+                s_in[2] = s_in[0][1] - s_in[0][0] + 1  # 改变对当前组原料管的总数的统计
                 break
             else:  # 若原料管不足，则需要将当前研究的产品管分为两组，一组全是装上原料管的，另一组全是没有的
                 s_in[0][0] = used_num  # 原料管分批
-                s_in[0][1] = original_start_num + total_num_of_s  # 原料管分批
-                s_in[2] = s_in[0][1] - s_in[0][0]  # 改变对当前组原料管的总数的统计
+                s_in[0][1] = original_start_num + total_num_of_s - 1  # 原料管分批
+                s_in[2] = s_in[0][1] - s_in[0][0] + 1  # 改变对当前组原料管的总数的统计
                 temp, copy_p = raw_num, copy.deepcopy(p)
                 copy_p[1] = p[1] - raw_num
                 product0.insert(product0.index(p) + 1, copy_p)
@@ -344,7 +344,7 @@ if __name__ == '__main__':
 
     # fit_list_plot(fit_list)  # 对迭代的绘图
     raw_cut_method = display_raw(pro_opt)
-    # if data.show_composition:
-    #     [print(p[0:3] + p[-4:]) for p in pro_opt]
+    if data.show_composition:
+        [print(p[0:3] + p[-4:]) for p in pro_opt]
     print("焊点数为%d" % (fit_opt - total_num))
     print("此次消耗时间为%f" % (time.time() - start))
